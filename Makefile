@@ -13,14 +13,15 @@ CFLAGS = -Wall -Wextra -Werror -fPIC
 ## -shared: make shared library, not normal executable.. output will be .so (shared object), not standalone program
 ## ------------------------ --------------- ---------
 C_SHARED= -fPIC -shared
-SRCS = main.c malloc.c free.c realloc.c calloc.c
+SRCS = .src/malloc.c 
+INCLUDES = ./includes
 OBJS = $(SRCS:.c=.o)
 
 all: $(NAME) link
 
 # compile the shared library
 $(NAME): $(OBJS)
-	$(CC) $(CC_SHARED) -o $@ $(OBJS)
+	$(CC) $(CC_SHARED) -I$(INCLUDES) -o $@ $(OBJS)
 # ---> will giveshared library : libft_malloc_x86_64-Linux.so
 
 # compile object files only if changed (cuh)
