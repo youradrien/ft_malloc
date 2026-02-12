@@ -12,8 +12,11 @@
 #include <string.h>
 
 #define MAX_ALLOC (1024UL * 1024UL * 1024UL) // 1 Go / Bloc max éviter overflow
-#define SMALL_MAX 128
-#define MEDIUM_MAX 1024
+
+#define TINY_MAX 128
+#define SMALL_MAX 1024
+
+#define MIN_BLOCKS  100
 
 typedef enum e_block_type {
     BLOCK_TINY,

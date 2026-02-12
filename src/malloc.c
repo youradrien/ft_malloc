@@ -60,35 +60,64 @@ static t_block  *find_free_block(size_t size, t_block_type type)
 
 static void init_block_zone(int _type)
 {
+    if(_type != 1 && _type != 2)
+        return ;
     // init small/medium zones
     const size_t page_size = getpagesize(); // macOS ou Linux avec sysconf
+    const size_t block_size = sizeof(t_block) + (
+            (_type == BLOCK_TINY) ? (TINY_MAX) : (SMALL_MAX)
+        );
+        
+    const size_t needed_size = block_size * MIN_BLOCKS;
+    const size_t mmap_size = ((needed_size + page_size - 1) / page_size) * page_size;
 
-    size_t mmap_size;
-    if(_type == 1) // tiny
-        mmap_size = (16 * page_size);  // 16 pages pour SMALL
-    if(_type == 2) // small
-        mmap_size = (128 * page_size); // 128 pages pour MEDIUM
-    g_malloc.small = mmap(NULL, (mmap_size),
-                            PROT_READ | PROT_WRITE,
-                            MAP_ANON | MAP_PRIVATE,
-                            -1, 0);
+    void *zone = mmap(NULL, mmap_size,
+                      PROT_READ | PROT_WRITE,
+                      MAP_ANON | MAP_PRIVATE,
+                      -1, 0);
+    if (zone == MAP_FAILED)
+        return;
 
-    t_block *BLOCK_= (t_block *) g_malloc.small;
-    BLOCK_->size = mmap_size - sizeof(t_block);
-    BLOCK_->free = 1;
-    BLOCK_->type = _type == 1 ? BLOCK_TINY : BLOCK_SMALL;
-    BLOCK_->next = NULL;
+    if (_type == 1)
+        g_malloc.tiny = (zone);
+    else if (_type == 2)
+        g_malloc.small = (zone);
 
-    if (!g_malloc.head)
-        g_malloc.head = (BLOCK_);
-    else
+    // découpage en blocs
+    char *ptr = (char *)zone;
+    t_block *prev = NULL;
+    const size_t  nb_blocks = mmap_size / (block_size);
+    for (size_t i = 0; i < nb_blocks; i++)
     {
-        t_block *c = g_malloc.head;
-        while (c->next)
-            c = c->next;
-        c->next = (BLOCK_);
-    }
+        // t_block *BLOCK_= (t_block *) (
+        //     _type == 1 ? g_malloc.tiny : g_malloc.small
+        // );
+        t_block *BLOCK_ = (t_block *)ptr;
 
+        BLOCK_->size = mmap_size - sizeof(t_block);
+        BLOCK_->free = 1;
+        BLOCK_->type = _type == 1 ? BLOCK_TINY : BLOCK_SMALL;
+        BLOCK_->next = NULL;
+
+        if(!prev)
+        {
+            if (!g_malloc.head)
+                g_malloc.head = (BLOCK_);
+            else
+            {
+                t_block *c = g_malloc.head;
+                while (c->next)
+                    c = c->next;
+                c->next = (BLOCK_);
+            }
+        }else
+        {
+            prev->next = BLOCK_;
+        }
+
+        prev = BLOCK_;
+        ptr += block_size;
+    }
 }
 
 
@@ -100,23 +129,21 @@ void    *malloc(size_t size)
     }
 
     // 1st malloc only 
-    if (!g_malloc.tiny && size <= SMALL_MAX) // [TINY]
-    {
+    if (!g_malloc.tiny && size <= TINY_MAX){ // [TINY]
         init_block_zone(1);
     }
-    if (!g_malloc.small && size <= MEDIUM_MAX) // [SMALL]
-    {
+    if (!g_malloc.small && size > TINY_MAX && size <= SMALL_MAX){ // [SMALL]
         init_block_zone(2);
     }
 
-    t_block *block = NULL;
     
     //  bloc libre selon la taille
-    if (size <= SMALL_MAX) // tiny
+    t_block *block = NULL;
+    if (size <= TINY_MAX) // tiny
     {
         block = find_free_block(BLOCK_TINY, size);
     } 
-    else if (size <= MEDIUM_MAX) // small
+    else if (size <= SMALL_MAX) // small
     {
         block = find_free_block(BLOCK_SMALL, size);
     } 
@@ -130,7 +157,7 @@ void    *malloc(size_t size)
         block->free = 0; 
     } 
     // LARGE block
-    else if (size > MEDIUM_MAX) // create a new block (pour LARGE only)
+    else if (size > SMALL_MAX) // create a new block (pour LARGE only)
     { 
         block = allocate_block(size);
         if (!block)
