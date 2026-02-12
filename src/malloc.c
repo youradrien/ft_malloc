@@ -58,6 +58,41 @@ static t_block  *find_free_block(size_t size, t_block_type type)
 
 
 
+static void init_block_zone(int _type)
+{
+    // init small/medium zones
+    const size_t page_size = getpagesize(); // macOS ou Linux avec sysconf
+
+    size_t mmap_size;
+    if(_type == 1) // tiny
+        mmap_size = (16 * page_size);  // 16 pages pour SMALL
+    if(_type == 2) // small
+        mmap_size = (128 * page_size); // 128 pages pour MEDIUM
+    g_malloc.small = mmap(NULL, (mmap_size),
+                            PROT_READ | PROT_WRITE,
+                            MAP_ANON | MAP_PRIVATE,
+                            -1, 0);
+
+    t_block *BLOCK_= (t_block *) g_malloc.small;
+    BLOCK_->size = mmap_size - sizeof(t_block);
+    BLOCK_->free = 1;
+    BLOCK_->type = _type == 1 ? BLOCK_TINY : BLOCK_SMALL;
+    BLOCK_->next = NULL;
+
+    if (!g_malloc.head)
+        g_malloc.head = (BLOCK_);
+    else
+    {
+        t_block *c = g_malloc.head;
+        while (c->next)
+            c = c->next;
+        c->next = (BLOCK_);
+    }
+
+}
+
+
+
 void    *malloc(size_t size)
 {
     if (size == 0 || size > MAX_ALLOC){
@@ -65,53 +100,25 @@ void    *malloc(size_t size)
     }
 
     // 1st malloc only 
-    // init small/medium zones
-    const size_t page_size = getpagesize(); // macOS ou Linux avec sysconf
-    if (!g_malloc.small && size <= SMALL_MAX) // [SMALL]
+    if (!g_malloc.tiny && size <= SMALL_MAX) // [TINY]
     {
-        const size_t small_sz = (16 * page_size);  // 16 pages pour SMALL
-        g_malloc.small = mmap(NULL, small_sz,
-                               PROT_READ | PROT_WRITE,
-                               MAP_ANON | MAP_PRIVATE,
-                               -1, 0);
-
-        t_block *first = (t_block *) g_malloc.small;
-        first->size = small_sz - sizeof(t_block);
-        first->free = 1;
-        first->type = BLOCK_SMALL;
-        first->next = NULL;
-        g_malloc.head = (first); // push into list
+        init_block_zone(1);
     }
-    if (!g_malloc.medium && size <= MEDIUM_MAX) // [MEDIUM]
+    if (!g_malloc.small && size <= MEDIUM_MAX) // [SMALL]
     {
-        const size_t medium_sz = (128 * page_size); // 128 pages pour MEDIUM
-        g_malloc.medium = mmap(NULL, medium_sz,
-                            PROT_READ | PROT_WRITE,
-                            MAP_ANON | MAP_PRIVATE,
-                            -1, 0);
-
-        t_block *second = (t_block *) g_malloc.medium;
-        second->size = medium_sz - sizeof(t_block);
-        second->free = 1;
-        second->type = BLOCK_MEDIUM;
-        second->next = NULL;
-        // push 2nd to the list
-        t_block *c = g_malloc.head;
-        while (c->next)
-            c = c->next;
-        c->next = (second);
+        init_block_zone(2);
     }
 
     t_block *block = NULL;
     
     //  bloc libre selon la taille
-    if (size <= SMALL_MAX) // small
+    if (size <= SMALL_MAX) // tiny
+    {
+        block = find_free_block(BLOCK_TINY, size);
+    } 
+    else if (size <= MEDIUM_MAX) // small
     {
         block = find_free_block(BLOCK_SMALL, size);
-    } 
-    else if (size <= MEDIUM_MAX) // medium
-    {
-        block = find_free_block(BLOCK_MEDIUM, size);
     } 
     else { // large
         block = find_free_block(BLOCK_LARGE, size); // rare, pour réutiliser large déjà alloc
@@ -122,7 +129,7 @@ void    *malloc(size_t size)
     if (block) {
         block->free = 0; 
     } 
-    // créer un nouveau bloc (seulement pour LARGE)
+    // LARGE block
     else if (size > MEDIUM_MAX) // create a new block (pour LARGE only)
     { 
         block = allocate_block(size);
@@ -132,16 +139,17 @@ void    *malloc(size_t size)
         block->next = NULL;
 
         // push
-        if (!g_malloc.head) {
-            g_malloc.head = block;
-        } else {
+        if (!g_malloc.head)
+            g_malloc.head = (block);
+        else
+        {
             t_block *c = g_malloc.head;
             while (c->next)
                 c = c->next;
             c->next = block;
         }
     }
-    // SMALL / MEDIUM → aucun bloc libre found → return NULL (zone pleine)
+    // SMALL / MEDIUM block aucuns libre found(zone pleine)
     else {
         return NULL; 
     }

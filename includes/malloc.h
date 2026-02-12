@@ -16,8 +16,8 @@
 #define MEDIUM_MAX 1024
 
 typedef enum e_block_type {
+    BLOCK_TINY,
     BLOCK_SMALL,
-    BLOCK_MEDIUM,
     BLOCK_LARGE
 } t_block_type;
 // memory block
@@ -37,8 +37,8 @@ typedef struct s_block {
 typedef struct s_malloc {
     t_block *head;
 
+    t_block *tiny;
     t_block *small;
-    t_block *medium;
 } t_malloc;
 
 // var global allocator (seule var-globale autorisée)
