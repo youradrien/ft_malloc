@@ -148,11 +148,11 @@ static void init_block_zone(int _type)
 
 void    *malloc(size_t size)
 {
-    //     FILE *f = fopen("./tmp/malloc.log", "a");
-    // if (f) {
-    //     fprintf(f, "malloc called: %zu\n", size);
-    //     fclose(f);
-    // }
+        FILE *f = fopen("./tmp/malloc.log", "a");
+    if (f) {
+        fprintf(f, "malloc called: %zu\n", size);
+        fclose(f);
+    }
     // setbuf(stdout, NULL);
     // printf("🔥 MY-OWN-MALLOC BTW (%zu)\n", size);
     // fflush(stdout);
