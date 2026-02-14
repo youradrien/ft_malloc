@@ -8,7 +8,6 @@ int main(void)
     void *b = malloc(128);
     free(a);
     free(b);
-    printf("couille\n");
     printf("✅ Test finished\n");
     return 0;
 }

@@ -48,7 +48,6 @@ else
 endif
 
 
-
 run: 
 	@echo " - compilation OS: $(UNAME_S)"
 	$(TEST_CC)
@@ -69,4 +68,3 @@ re: fclean all
 # Optional: test your malloc with LD_PRELOAD
 test: all
 	LD_PRELOAD=./$(LINK) ls
-
