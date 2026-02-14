@@ -10,9 +10,12 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+//#include "malloc.h"
 #include "malloc.h"
 
 t_malloc g_malloc = {NULL, NULL, NULL}; 
+
+
 
 // void *mmap( void *addr, size_t length, int prot,
 //             int flags, int fd, off_t offset);
@@ -37,6 +40,10 @@ static t_block  *allocate_block(size_t size)
 
 
 
+
+
+
+
 // find 1st free block present in da list
 // head → block → block → block → NULL
 // or 
@@ -56,21 +63,34 @@ static t_block  *find_free_block(size_t size, t_block_type type)
     return NULL;
 }
 
-
-
+/*
+    ZONE-TINY (multiple de page_size)
+    ├─ [t_block][TINY_MAX]
+    ├─ [t_block][TINY_MAX]
+    ├─ [t_block][TINY_MAX]
+    ├─ ...
+    (100 fois min.)
+*/
 static void init_block_zone(int _type)
 {
     if(_type != 1 && _type != 2)
         return ;
+
     // init small/medium zones
     const size_t page_size = getpagesize(); // macOS ou Linux avec sysconf
     const size_t block_size = sizeof(t_block) + (
             (_type == BLOCK_TINY) ? (TINY_MAX) : (SMALL_MAX)
         );
         
+    // needed size for either TINY / SMALL () pour 100 blocs
     const size_t needed_size = block_size * MIN_BLOCKS;
+    printf("-> needed size: %zu \n", needed_size);
+    // arrondi a 4096 -> 
+    //           on most system  page size will be 4096.
+    //           this means every page will contain exactly 4,096 bytes of data
     const size_t mmap_size = ((needed_size + page_size - 1) / page_size) * page_size;
-
+    printf("-> mmap() nbr: %zu \n", mmap_size);
+    // mmap() alloction par tranche de 4096 bytes
     void *zone = mmap(NULL, mmap_size,
                       PROT_READ | PROT_WRITE,
                       MAP_ANON | MAP_PRIVATE,
@@ -122,13 +142,22 @@ static void init_block_zone(int _type)
 
 
 
+
+
+
+
 void    *malloc(size_t size)
 {
+    setbuf(stdout, NULL);
+    printf("🔥 MY-OWN-MALLOC BTW (%zu)\n", size);
+    fflush(stdout);
+    write(1, "🔥 MY MALLOC CALLED\n", 20);
+    return NULL;
     if (size == 0 || size > MAX_ALLOC){
         return NULL;
     }
-
-    // 1st malloc only 
+    printf("🔥 MY-OWN-MALLOC BTW (%zu)\n", size);
+    // at 1st malloc only 
     if (!g_malloc.tiny && size <= TINY_MAX){ // [TINY]
         init_block_zone(1);
     }
@@ -183,4 +212,5 @@ void    *malloc(size_t size)
     // return usable space + 1 after *ptr
     return (void *)(block + 1);
 }
+
 
