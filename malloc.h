@@ -23,11 +23,7 @@ typedef enum e_block_type {
     BLOCK_SMALL,
     BLOCK_LARGE
 } t_block_type;
-// memory block
-// → bloc1 [100 | free=0]  
-//      → bloc2 [200 | free=0] 
-//          → bloc3 [50 | free=0] 
-//              → NULL
+
 typedef struct s_block {
     size_t size;
     int free;
@@ -38,7 +34,7 @@ typedef struct s_block {
 
 // allocation structure
 typedef struct s_malloc {
-    t_block *head;
+    t_block *large;
 
     t_block *tiny;
     t_block *small;
@@ -48,11 +44,13 @@ typedef struct s_malloc {
 extern t_malloc g_malloc;
 
 // func def
-// void    *malloc(size_t size);
-// void    free(void *ptr);
-// void    *realloc(void *ptr, size_t size);
 void    free(void *ptr);
 void    *malloc(size_t size);
 void    *realloc(void *ptr, size_t size);
+void    show_alloc_mem();
 
 #endif
+
+
+
+

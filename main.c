@@ -3,8 +3,15 @@
 #include "malloc.h"
 
 int main() {
-    printf("----- MAIN ------ \n");
-    void *result = malloc(3);
+    // tiny
+    void *result = malloc(12);
     (void)(result);
+    void *a = malloc(24);
+    (void)(a);
+    // 
+    void *medium = malloc(256);
+    (void)(medium);
+
+    show_alloc_mem();
     return 0;
 }
