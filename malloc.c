@@ -24,7 +24,7 @@ void show_alloc_mem()
         if(arr_blocks[i])
         {
             // zone init
-            printf("%s : %p [size = %.2f KB]\n", 
+            printf("\n%s : %p [size = %.2f KB]\n", 
                 i == 2 ? ("BIG") : (i == 0 ? "TINY": "SMALL"), 
                 (void *)arr_blocks[i], 
                 ((arr_blocks[i])->size * MIN_BLOCKS) / 1024.0
@@ -40,12 +40,13 @@ void show_alloc_mem()
                         *start = (void *)(b + 1),
                         *end = (void *)((char *)(b + 1) + b->size);
                     acc += b->size;
-                    printf("%p - %p : %zu bytes\n", start, end, acc);
+                    printf("%p - %p : %zu bytes\n", start, end, b->size);
                 }
                 b = b->next;
             }
         }
     }
+    printf("\n");
 }
 
 
@@ -193,10 +194,12 @@ static void init_block_zone(int _type)
 
 void    *malloc(size_t size)
 {
-    //printf("// // // // // // // // //\n");
-    printf("⚡️ YOURADRIEN-MALLOC (%zu) ⚡️\n", size);
-    //printf("// // // // // // // // //\n");
-    // at 1st malloc only 
+    // printf("⚡️ YOURADRIEN-MALLOC (%zu) ⚡️\n", size);
+    if(size == 0)
+        size = 1;
+
+
+    // blocks init
     if (!g_malloc.tiny && size <= TINY_MAX){ // [TINY]
         init_block_zone(1);
     }
@@ -204,7 +207,7 @@ void    *malloc(size_t size)
         init_block_zone(2);
     }
 
-    //  bloc libre selon la taille
+    // find bloc libre selon la taille
     t_block *block = NULL;
     if (size <= TINY_MAX) // tiny
     {
@@ -217,11 +220,11 @@ void    *malloc(size_t size)
     else { // large
         block = find_free_block(size, BLOCK_LARGE); // rare, pour réutiliser large déjà alloc
     }
-    // show_alloc_mem();
 
     // bloc libre existe → réutiliser
     if (block) {
-        block->free = 0; 
+        block->free = 0;
+        block->size = (size);
     } 
     // LARGE block
     // else if (size > SMALL_MAX) // create a new block (pour LARGE only)

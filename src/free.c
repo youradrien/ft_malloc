@@ -12,24 +12,39 @@
 
 #include "malloc.h"
 
+/*
+    TINY / SMALL = pools → réutilisation → fragmentation gérée
+    LARGE = allocation directe → jetable
+*/
 void free(void *ptr)
 {
     if (!ptr)
         return;
 
-    const t_block *ptr_block = (t_block *)ptr - 1;
+    t_block *block = (t_block *)ptr - 1;
 
-    // retirer de la liste
-    if (g_malloc.head == ptr_block)
-        g_malloc.head = ptr_block->next;
-    else {
-        t_block *prev = g_malloc.head;
-        while (prev->next && prev->next != ptr_block)
-            prev = prev->next;
-        if (prev->next == ptr_block)
-            prev->next = ptr_block->next;
+    // double free protection
+    if (block->free)
+        return;
+
+    if (block->type == BLOCK_LARGE)
+    {
+        // retirer de la liste
+        if (g_malloc.large == block)
+            g_malloc.large = block->next;
+        else {
+            t_block *head = g_malloc.large;
+            while (head->next && head->next != block){
+                head = head->next;
+            }
+            if (head->next == block)
+                head->next = block->next;
+        }
+        munmap(block, sizeof(t_block) + block->size);
+        return;
+    }else{
+        block->free = 1;
     }
 
-    // munmap free memory
-    munmap((t_block *)(ptr_block), sizeof(t_block) + (ptr_block)->size);
+
 }

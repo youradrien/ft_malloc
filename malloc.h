@@ -13,8 +13,9 @@
 
 #define MAX_ALLOC (1024UL * 1024UL * 1024UL) // 1 Go / Bloc max éviter overflow
 
-#define TINY_MAX 128
-#define SMALL_MAX 1024
+// small fragmentations
+#define TINY_MAX 128 // small structs, strings, pointers
+#define SMALL_MAX 2048 // medium buffers, parsing, I/O buffers
 
 #define MIN_BLOCKS  100
 
