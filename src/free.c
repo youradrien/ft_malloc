@@ -30,21 +30,21 @@ void free(void *ptr)
     if (block->type == BLOCK_LARGE)
     {
         // retirer de la liste
+        if(!g_malloc.large)
+            return ;
         if (g_malloc.large == block)
             g_malloc.large = block->next;
         else {
-            t_block *head = g_malloc.large;
-            while (head->next && head->next != block){
-                head = head->next;
+            t_block *h = g_malloc.large;
+            while (h->next && h->next != block){
+                h = h->next;
             }
-            if (head->next == block)
-                head->next = block->next;
+            if (h->next == block)
+                h->next = block->next;
         }
         munmap(block, sizeof(t_block) + block->size);
         return;
-    }else{
-        block->free = 1;
     }
-
-
+        
+    block->free = 1;
 }

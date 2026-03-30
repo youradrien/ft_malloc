@@ -19,13 +19,14 @@ t_malloc g_malloc = {NULL, NULL, NULL};
 void show_alloc_mem()
 {
     t_block *arr_blocks[3] = {g_malloc.tiny, g_malloc.small, g_malloc.large};
+    size_t total = 0;
     for(int i = 0; i < 3; i ++)
     {
         if(arr_blocks[i])
         {
             // zone init
-            printf("\n%s : %p [size = %.2f KB]\n", 
-                i == 2 ? ("BIG") : (i == 0 ? "TINY": "SMALL"), 
+            printf("\n%s : %p [zone size = %.2f KB]\n", 
+                i == 2 ? ("LARGE") : (i == 0 ? "TINY": "SMALL"), 
                 (void *)arr_blocks[i], 
                 ((arr_blocks[i])->size * MIN_BLOCKS) / 1024.0
             );
@@ -44,49 +45,39 @@ void show_alloc_mem()
                 }
                 b = b->next;
             }
+            total += acc;
+            printf("- [%s] TOTAL : %zu bytes \n", 
+                i == 2 ? ("LARGE") : (i == 0 ? "TINY": "SMALL"), 
+                acc
+            );
         }
     }
+    printf("Total: %zu bytes\n", total);
     printf("\n");
 }
 
 
 
-// void *mmap( void *addr, size_t length, int prot,
-//             int flags, int fd, off_t offset);
-static t_block  *allocate_block(size_t size)
-{
-    const size_t total_size = sizeof(t_block) + size;
 
-    // t_block * just a *ptr 
-    // to an adress that has n space available
-    // if(!prev)
-    // {
-    //     if (!g_malloc.head)
-    //         g_malloc.head = (BLOCK_);
-    //     else
-    //     {
-    //         t_block *c = g_malloc.head;
-    //         while (c->next)
-    //             c = c->next;
-    //         c->next = (BLOCK_);
-    //     }
-    // }else
-    // {
-    //     prev->next = BLOCK_;
-    // }
-    t_block *block = mmap(NULL, total_size, 
-                            PROT_READ | PROT_WRITE,
-                            MAP_ANON | MAP_PRIVATE, 
-                            -1, 0);
-    if (block == MAP_FAILED){
+static t_block  *allocate_large(size_t size)
+{
+    const size_t 
+                total_size = sizeof(t_block) + size;
+
+    t_block *block = mmap(NULL, total_size,
+                          PROT_READ | PROT_WRITE,
+                          MAP_ANON | MAP_PRIVATE,
+                          -1, 0);
+    if (block == MAP_FAILED)
         return NULL;
-    }
+
     block->size = size;
+    block->type = BLOCK_LARGE;
     block->free = 0;
     block->next = NULL;
+
     return (block);
 }
-
 
 
 
@@ -99,21 +90,21 @@ static t_block  *allocate_block(size_t size)
 // head → block → NULL → block → block
 static t_block  *find_free_block(size_t size, t_block_type type)
 {
-    t_block *_current;
+    t_block *_block;
     if(type == BLOCK_TINY) 
-        _current = g_malloc.tiny;
+        _block = g_malloc.tiny;
     else if (type == BLOCK_SMALL)
-        _current = g_malloc.small;
+        _block = g_malloc.small;
     else
-        _current = g_malloc.large;
-    while (_current)
+        _block = g_malloc.large;
+    while (_block)
     {
-        if (_current->free == 1 && _current->type == type 
-            &&  _current->size >= size)
+        if (_block->free == 1 && _block->type == type 
+            &&  _block->size >= size)
         {
-            return _current;
+            return _block;
         }
-        _current = _current->next;
+        _block = _block->next;
     }
     return NULL;
 }
@@ -135,16 +126,14 @@ static void init_block_zone(int _type)
     if(_type != 1 && _type != 2)
         return ;
 
-    // init small/medium zones
-    // needed size for either TINY / SMALL () pour 100 bloc
+    // needed size for either TINY / SMALL () pour 100 bloc min.
     const size_t page_size = getpagesize(); // macOS ou Linux avec sysconf
     const size_t block_size = sizeof(t_block) + (
             (_type == 1) ? (TINY_MAX) : (SMALL_MAX)
         );
         
     // Une page est un bloc fixe de mémoire géré par le noyau.
-    // Typiquement : 4096 bytes (4 KB) → le plus courant
-    // arrondi a 4096 -> on most system  page size will be 4096.
+    // typiquement : 4096 bytes (4 KB) → most system  page size will be 4096.
     // page contains flags:
     // READ
     // WRITE
@@ -152,7 +141,7 @@ static void init_block_zone(int _type)
     // NONE
     const size_t needed_size = block_size * MIN_BLOCKS;
     const size_t mmap_size = ((needed_size + page_size - 1) / page_size) * page_size;
-    // mmap() alloction par tranche de 4096 bytes
+    // mmap() allocation par tranche de 4096 bytes
     void *zone = mmap(NULL, mmap_size,
                       PROT_READ | PROT_WRITE,
                       MAP_ANON | MAP_PRIVATE,
@@ -227,25 +216,23 @@ void    *malloc(size_t size)
         block->size = (size);
     } 
     // LARGE block
-    // else if (size > SMALL_MAX) // create a new block (pour LARGE only)
-    // { 
-    //     block = allocate_block(size);
-    //     if (!block)
-    //         return NULL;
-    //     block->type = BLOCK_LARGE;
-    //     block->next = NULL;
+    else if (size > SMALL_MAX) // create a new block (pour LARGE only)
+    { 
+        block = allocate_large(size);
+        if (!block)
+            return NULL;
 
-    //     // push
-    //     if (!g_malloc.head)
-    //         g_malloc.head = (block);
-    //     else
-    //     {
-    //         t_block *c = g_malloc.head;
-    //         while (c->next)
-    //             c = c->next;
-    //         c->next = block;
-    //     }
-    // }
+        // push dans la liste globale
+        if (!g_malloc.large)
+            g_malloc.large = block;
+        else
+        {
+            t_block *c = g_malloc.large;
+            while (c->next)
+                c = c->next;
+            c->next = block;
+        }
+    }
     // // SMALL / MEDIUM block aucuns libre found(zone pleine)
     // else {
     //     return NULL; 

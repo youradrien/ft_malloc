@@ -63,13 +63,16 @@ else
     LINK_NAME = libft_malloc.so
 endif
 PROG_NAME = MALLOC_TESTS
+
 # lib
-SRCS_LIB = malloc.c
+SRCS_LIB = src/malloc.c src/free.c src/realloc.c
 OBJ_LIB = $(SRCS_LIB:.c=.o)
+
 # main
-SRC_MAIN = main.c
+SRC_MAIN = src/main.c
 OBJ_MAIN = $(SRC_MAIN:.c=.o)
 
+CFLAGS += -Iincludes
 # def rule
 all: $(LIB_NAME) link $(PROG_NAME)
 
@@ -89,13 +92,12 @@ link: $(LIB_NAME)
 
 # obj du main
 $(OBJ_MAIN): $(SRC_MAIN)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -Iincludes -c $< -o $@
 # obj de la librairie
-$(OBJ_LIB): $(SRCS_LIB)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-
-
+# $(OBJ_LIB): $(SRCS_LIB)
+# 	$(CC) $(CFLAGS) -c $< -o $@
+%.o: %.c
+	$(CC) $(CFLAGS) -Iincludes -c $< -o $@
 
 
 # cible pour exécuter directement
