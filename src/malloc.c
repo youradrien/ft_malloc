@@ -13,232 +13,134 @@
 //#include "malloc.h"
 #include "malloc.h"
 
-t_malloc g_malloc = {NULL, NULL, NULL}; 
+t_malloc g_malloc = {0, 0, 0};
+pthread_mutex_t g_malloc_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-
-void show_alloc_mem()
+// align memory on (mask + 1) bytes with (mask + 1) being a power of 2
+static inline size_t    ft_align(size_t size, size_t mask)
 {
-    t_block *arr_blocks[3] = {g_malloc.tiny, g_malloc.small, g_malloc.large};
-    size_t total = 0;
-    for(int i = 0; i < 3; i ++)
-    {
-        if(arr_blocks[i])
-        {
-            // zone init
-            printf("\n%s : %p [zone size = %.2f KB]\n", 
-                i == 2 ? ("LARGE") : (i == 0 ? "TINY": "SMALL"), 
-                (void *)arr_blocks[i], 
-                ((arr_blocks[i])->size * MIN_BLOCKS) / 1024.0
-            );
-            // each alloc
-            t_block *b = arr_blocks[i];
-            size_t acc = 0;
-            while (b)
-            {
-                if (!b->free)
-                {
-                    void 
-                        *start = (void *)(b + 1),
-                        *end = (void *)((char *)(b + 1) + b->size);
-                    acc += b->size;
-                    printf("%p - %p : %zu bytes\n", start, end, b->size);
-                }
-                b = b->next;
-            }
-            total += acc;
-            printf("- [%s] TOTAL : %zu bytes \n", 
-                i == 2 ? ("LARGE") : (i == 0 ? "TINY": "SMALL"), 
-                acc
-            );
-        }
-    }
-    printf("Total: %zu bytes\n", total);
-    printf("\n");
+	return ((size + mask) & ~mask);
 }
 
 
-
-
-static t_block  *allocate_large(size_t size)
+// create a block -> move from free list to alloc list
+static inline void *block_create(t_block **free, t_block **alloc, const size_t size)
 {
-    const size_t 
-                total_size = sizeof(t_block) + size;
-
-    t_block *block = mmap(NULL, total_size,
-                          PROT_READ | PROT_WRITE,
-                          MAP_ANON | MAP_PRIVATE,
-                          -1, 0);
-    if (block == MAP_FAILED)
+    t_block *b = *free; // head from free
+    if (!b)
         return NULL;
 
-    block->size = size;
-    block->type = BLOCK_LARGE;
-    block->free = 0;
-    block->next = NULL;
+    // remove from free list
+    *free = b->next;
+    if (*free)
+        (*free)->prev = NULL;
 
-    return (block);
+    // push to alloc list : head insertion O(1) complexity
+    if (*alloc)
+        (*alloc)->prev = (b);
+
+    b->next = *alloc;
+    b->prev = NULL;
+    b->size = size;
+
+    *alloc = (b);
+    return (b + 1); // memory usable by user
 }
 
 
 
 
-
-
-// find 1st free block present in da list
-// head → block → block → block → NULL
-// or 
-// head → block → NULL → block → block
-static t_block  *find_free_block(size_t size, t_block_type type)
+//initialize a new page: create free blocks inside
+static inline void mem_init_zone(t_page **tiny_small_page, t_page *p, const size_t zone_size)
 {
-    t_block *_block;
-    if(type == BLOCK_TINY) 
-        _block = g_malloc.tiny;
-    else if (type == BLOCK_SMALL)
-        _block = g_malloc.small;
-    else
-        _block = g_malloc.large;
-    while (_block)
+    // insert page into liste (double linked)
+    // p <-> page1 <-> page2 <-> page3
+    p->prev = NULL;
+    if ((p->next = *tiny_small_page))
+        p->next->prev = p;
+    *tiny_small_page = p;
+
+    // init block lists
+    t_block *free_block = (void *)p + sizeof(t_page);
+    p->alloc = NULL;
+    p->free = free_block; // start free here
+
+    // make blocks -> [block][data][block][data][block][data]
+    size_t total_size = zone_size * (MIN_BLOCKS);
+    while ((void *)free_block + sizeof(t_block) + zone_size <= (void *)p + total_size)
     {
-        if (_block->free == 1 && _block->type == type 
-            &&  _block->size >= size)
-        {
-            return _block;
-        }
-        _block = _block->next;
+        free_block->next = (void *)free_block + sizeof(t_block) + zone_size;
+        free_block->next->prev = free_block;
+        free_block = free_block->next;
     }
-    return NULL;
+    free_block->next = NULL;
 }
 
 
 
 
-
-/*
-    ZONE-TINY (multiple de page_size)
-    ├─ [t_block][TINY_MAX]
-    ├─ [t_block][TINY_MAX]
-    ├─ [t_block][TINY_MAX]
-    ├─ ...
-    (100 fois min.)
-*/
-static void init_block_zone(int _type)
+// tiny/small malloc: find a free block or mmap a new page
+static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t zone_size, const size_t size)
 {
-    if(_type != 1 && _type != 2)
-        return ;
+    t_page *p = *tiny_small_page;
 
-    // needed size for either TINY / SMALL () pour 100 bloc min.
-    const size_t page_size = getpagesize(); // macOS ou Linux avec sysconf
-    const size_t block_size = sizeof(t_block) + (
-            (_type == 1) ? (TINY_MAX) : (SMALL_MAX)
-        );
+    // find a page with free blocks
+    while (p && !p->free)
+        p = p->next;
+
+    if (!p)
+    {
+        // mmap new page()
+        p = mmap(NULL, zone_size * (MIN_BLOCKS), PROT_READ | PROT_WRITE,
+                   MAP_ANON | MAP_PRIVATE, -1, 0);
+        if (p == MAP_FAILED)
+            return NULL;
         
-    // Une page est un bloc fixe de mémoire géré par le noyau.
-    // typiquement : 4096 bytes (4 KB) → most system  page size will be 4096.
-    // page contains flags:
-    // READ
-    // WRITE
-    // EXEC
-    // NONE
-    const size_t needed_size = block_size * MIN_BLOCKS;
-    const size_t mmap_size = ((needed_size + page_size - 1) / page_size) * page_size;
-    // mmap() allocation par tranche de 4096 bytes
-    void *zone = mmap(NULL, mmap_size,
-                      PROT_READ | PROT_WRITE,
-                      MAP_ANON | MAP_PRIVATE,
-                      -1, 0);
-    if (zone == MAP_FAILED)
-        return;
-    if (_type == 1)
-        g_malloc.tiny = (t_block *)((char *)zone);
-    else
-        g_malloc.small = (t_block *)((char *)zone);
-
-    char *ptr = (char *)zone;
-    t_block 
-            *prev = NULL;
-    const size_t  nb_blocks = mmap_size / (block_size);
-    for (size_t i = 0; i < nb_blocks; i++)
-    {
-        t_block *block = (t_block *)ptr;
-
-        block->size = (_type == 1) ? TINY_MAX : SMALL_MAX;
-        block->type = (_type == 1) ? BLOCK_TINY : BLOCK_SMALL;
-        block->next = NULL;
-        block->free = 1;
-
-        if (prev){
-            prev->next = block;
-        }
-        prev = block;
-        ptr += block_size;
+        mem_init_zone(tiny_small_page, p, zone_size);
     }
+
+    return block_create(&p->free, &p->alloc, ft_align(size, 31));
 }
 
 
 
 
+// large malloc: mmap directly
+static void *malloc_large(size_t size)
+{
+    size_t page_size = getpagesize();
+    size_t total = ft_align(size + sizeof(t_block), page_size - 1) * 100;
 
+    t_block *b = mmap(NULL, total, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+    if (b == MAP_FAILED)
+        return NULL;
 
+    b->size = ft_align(size, 31);
+    b->prev = NULL;
+    if ((b->next = g_malloc.large))
+        g_malloc.large->prev = b;
+    g_malloc.large = (b);
+
+    return (b + 1);
+}
 
 
 void    *malloc(size_t size)
 {
-    // printf("⚡️ YOURADRIEN-MALLOC (%zu) ⚡️\n", size);
-    if(size == 0)
-        size = 1;
+    if (size == 0)
+        return NULL;
 
+    size_t type = (size > TINY_MAX) + (size > SMALL_MAX);
+    void *ptr = NULL;
 
-    // blocks init
-    if (!g_malloc.tiny && size <= TINY_MAX){ // [TINY]
-        init_block_zone(1);
-    }
-    if (!g_malloc.small && size > TINY_MAX && size <= SMALL_MAX){ // [SMALL]
-        init_block_zone(2);
-    }
+    pthread_mutex_lock(&g_malloc_mutex);
+    if (type == 0)
+        ptr = malloc_tiny_small(&g_malloc.tiny, TINY_MAX, size);
+    else if (type == 1)
+        ptr = malloc_tiny_small(&g_malloc.small, SMALL_MAX, size);
+    else
+        ptr = malloc_large(size);
+    pthread_mutex_unlock(&g_malloc_mutex);
 
-    // find bloc libre selon la taille
-    t_block *block = NULL;
-    if (size <= TINY_MAX) // tiny
-    {
-        block = find_free_block(size, BLOCK_TINY);
-    } 
-    else if (size <= SMALL_MAX) // small
-    {
-        block = find_free_block(size, BLOCK_SMALL);
-    } 
-    else { // large
-        block = find_free_block(size, BLOCK_LARGE); // rare, pour réutiliser large déjà alloc
-    }
-
-    // bloc libre existe → réutiliser
-    if (block) {
-        block->free = 0;
-        block->size = (size);
-    } 
-    // LARGE block
-    else if (size > SMALL_MAX) // create a new block (pour LARGE only)
-    { 
-        block = allocate_large(size);
-        if (!block)
-            return NULL;
-
-        // push dans la liste globale
-        if (!g_malloc.large)
-            g_malloc.large = block;
-        else
-        {
-            t_block *c = g_malloc.large;
-            while (c->next)
-                c = c->next;
-            c->next = block;
-        }
-    }
-    // // SMALL / MEDIUM block aucuns libre found(zone pleine)
-    // else {
-    //     return NULL; 
-    // }
-    // return usable space + 1 after *ptr
-    return (void *)(block + 1);
+    return ptr;
 }
-
-

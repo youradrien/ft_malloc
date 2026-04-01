@@ -3,12 +3,13 @@
 #include "malloc.h"
 
 int main() {
-    printf("========== ALLOCATION ==========\n");
+    printf("========== MALLOC TESTS ==========\n");
 
     // --- TINY ---
     void *t1 = malloc(12);
     void *t2 = malloc(24);
     void *t3 = malloc(64);
+    void *t4 = malloc(1);
 
     // --- SMALL ---
     void *s1 = malloc(256);
