@@ -3,10 +3,10 @@
 #include "malloc.h"
 
 int main() {
-    printf("========== MALLOC TESTS ==========\n");
+    printf("==================  MALLOC TESTS ==================\n");
 
     // --- TINY ---
-    void *t1 = malloc(12);
+    char *t1 = (char *)malloc(12);
     void *t2 = malloc(24);
     void *t3 = malloc(64);
     void *t4 = malloc(1);
@@ -24,25 +24,43 @@ int main() {
     (void)s1;
     (void)s2;
     (void)l1;
-
+    t1[0] = 'a';
+    t1[1] = 'b';
+    t1[2] = 'c';
+    t1[3] = '\n';
+    printf("t1 = %s", t1);
     show_alloc_mem();
 
-    free(t2);
-    free(t3);
-    free(l1);
-
-    // show_alloc_mem();
-
-    // printf("\n=== REALLOC LIKE TEST ===\n");
-    // void *d = malloc(24); // devrait réutiliser b
-
-    // show_alloc_mem();
-
-    // printf("\n=== FREE ALL ===\n");
     // free(t1);
-    // free(t2);
+    // printf("t1 = %s", t1);
     // free(t3);
+    // free(l1);
+    // show_alloc_mem();
 
-    show_alloc_mem();
+    // stress test
+    int i; 
+	char *addr; 
+	i = 0; 
+	while (i < 1024) // large
+	{ 
+		addr = (char * )malloc(2500); 
+		// addr[0] = 42; 
+		i++; 
+	} 
+    i = 0; 
+	while (i < 1024) // small
+	{ 
+		addr = (char * )malloc(1024); 
+		// addr[0] = 42; 
+		i++; 
+	}
+    i = 0; 
+	while (i < 1024) // tiny
+	{ 
+		addr = (char * )malloc(128); 
+		// addr[0] = 42; 
+		i++; 
+	}  
+    // show_alloc_mem();
     return 0;
 }

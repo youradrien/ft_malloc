@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 #define MAX_ALLOC (1024UL * 1024UL * 1024UL) // 1 Go / Bloc max éviter overflow
 
@@ -71,6 +72,7 @@ void    *realloc(void *ptr, size_t size);
 size_t   ft_align(size_t size, size_t mask);
 size_t  page_size(size_t size);
 void    show_alloc_mem();
+bool	is_valid_block(const void *ptr, size_t size);
 
 #endif
 

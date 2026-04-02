@@ -44,7 +44,7 @@ static inline void *block_create(t_block **free, t_block **alloc, const size_t s
 
 
 
-//initialize a new page: create free blocks inside
+//initialize a new page: create free blocks inside page
 static inline void mem_init_zone(t_page **tiny_small_page, t_page *p, const size_t zone_size)
 {
     // insert page into liste (double linked)
