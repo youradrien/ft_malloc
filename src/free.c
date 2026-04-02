@@ -12,82 +12,86 @@
 
 #include "malloc.h"
 
-/*
-    TINY / SMALL = pools → réutilisation → fragmentation gérée
-    LARGE = allocation directe → jetable
-*/
+static void			free_unused_page(const int t, t_page *p)
+{
+	if (p->prev)
+		p->prev->next = p->next;
+	else
+	{
+		if (t == BLOCK_TINY)
+			g_malloc.tiny = p->next;
+		else
+			g_malloc.small = p->next;
+	}
+	if (p->next)
+		p->next->prev = p->prev;
+	munmap(p, MALLOC_ZONE * (t == BLOCK_TINY ? TINY_MAX : SMALL_MAX) );
+}
 
-// static void			free_unused_mem(const int malloc_size, t_page *mem)
-// {
-// 	size_t const	zone_sizes[2] = {ZONE_TINY, ZONE_SMALL};
 
-// 	if (mem->prev)
-// 		mem->prev->next = mem->next;
-// 	else
-// 	{
-// 		if (malloc_size)
-// 			g_malloc_pages.tiny = mem->next;
-// 		else
-// 			g_malloc_pages.small = mem->next;
-// 	}
-// 	if (mem->next)
-// 		mem->next->prev = mem->prev;
-// 	munmap(mem, MALLOC_ZONE * zone_sizes[malloc_size]);
-// }
 
-// static inline void	free_not_large(t_block *block, \
-// 						const int malloc_size, t_page *mem)
-// {
-// 	if (block->prev)
-// 		block->prev->next = block->next;
-// 	else
-// 		mem->alloc = block->next;
-// 	if (block->next)
-// 		block->next->prev = block->prev;
-// 	block->prev = NULL;
-// 	block->next = mem->free;
-// 	if (mem->free)
-// 		mem->free->prev = block;
-// 	mem->free = block;
-// 	if (!mem->alloc)
-// 		free_unused_mem(malloc_size, mem);
-// }
+// [tiny / small]
+static inline void	free_tiny_small(t_block *block, const int malloc_size, t_page *p)
+{
+	if (block->prev)
+		block->prev->next = block->next;
+	else
+		p->alloc = block->next;
+	if (block->next)
+		block->next->prev = block->prev;
+	block->prev = NULL;
+	block->next = p->free;
+	if (p->free)
+		p->free->prev = block;
+	p->free = block;
+	if (!p->alloc) 
+    {
+        // empty page, no blocks used
+        // limit the munmap() calls w/ only unmaping empty pages
+		free_unused_page(malloc_size, p);
+    }
+}
 
-// static inline void	free_large(t_block *block)
-// {
-// 	const size_t	msize = ft_align(block->size + sizeof(t_block), MASK_0XFFF);
 
-// 	if (block->prev)
-// 		block->prev->next = block->next;
-// 	else
-// 		g_malloc_pages.large = block->next;
-// 	if (block->next)
-// 		block->next->prev = block->prev;
-// 	munmap(block, msize);
-// }
 
-// static void			free_block(t_block *block)
-// {
-// 	const int		type = page_size(block->size);
-// 	size_t const	zone_sizes[2] = {ZONE_TINY, ZONE_SMALL};
-// 	t_page			*mem;
+// [large]
+static inline void	free_large(t_block *block)
+{
+	const size_t	msize = ft_align(block->size + sizeof(t_block), MASK_0XFFF);
 
-// 	if (type == MALLOC_LARGE)
-// 		free_large(block);
-// 	else
-// 	{
-// 		mem = (!type) ? g_malloc_pages.tiny : g_malloc_pages.small;
-// 		while (!((void *)block < (void *)mem + MALLOC_ZONE * \
-// 			zone_sizes[type] && (void *)block > (void *)mem))
-// 			mem = mem->next;
-// 		free_not_large(block, type, mem);
-// 	}
-// }
+	if (block->prev)
+		block->prev->next = block->next;
+	else
+		g_malloc.large = block->next;
+	if (block->next)
+		block->next->prev = block->prev;
+	munmap(block, msize);
+}
 
-// void				free(void *ptr)
-// {
-// 	pthread_mutex_lock(&g_malloc_mutex);
-// 	if (ptr && is_valid_block(ptr, ZONE_SMALL + 1))
-// 		free_block(ptr - sizeof(t_block));
-// 	pthread_mutex_unlock(&g_malloc_mutex);
-// }
+
+
+static void			free_block(t_block *block)
+{
+	const int		type = page_size(block->size);
+
+	if (type == BLOCK_LARGE)
+		free_large(block);
+	else 
+	{
+		t_page *p = (type == BLOCK_TINY) ? g_malloc.tiny : g_malloc.small;
+		while (! ((void *)block < (void *)p + MALLOC_ZONE * (type == 0 ? TINY_MAX : SMALL_MAX) && (void *)block > (void *)p) )
+			p = p->next;
+		free_tiny_small(block, type, p);
+	}
+}
+
+
+void				free(void *ptr)
+{
+	pthread_mutex_lock(&g_malloc_mutex);
+	if (ptr && is_valid_block(ptr, SMALL_MAX + 1))
+    {
+		free_block(ptr - sizeof(t_block));
+    }
+	pthread_mutex_unlock(&g_malloc_mutex);
+}

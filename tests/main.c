@@ -27,8 +27,9 @@ int main() {
 
     show_alloc_mem();
 
-    // printf("\n=== FREE t2 ===\n");
-    // free(t2);
+    free(t2);
+    free(t3);
+    free(l1);
 
     // show_alloc_mem();
 
@@ -42,6 +43,6 @@ int main() {
     // free(t2);
     // free(t3);
 
-    // show_alloc_mem();
+    show_alloc_mem();
     return 0;
 }

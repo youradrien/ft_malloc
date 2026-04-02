@@ -16,12 +16,6 @@
 t_malloc g_malloc = {0, 0, 0};
 pthread_mutex_t g_malloc_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// align memory on (mask + 1) bytes with (mask + 1) being a power of 2
-static inline size_t    ft_align(size_t size, size_t mask)
-{
-	return ((size + mask) & ~mask);
-}
-
 
 // create a block -> move from free list to alloc list
 static inline void *block_create(t_block **free, t_block **alloc, const size_t size)
@@ -66,7 +60,7 @@ static inline void mem_init_zone(t_page **tiny_small_page, t_page *p, const size
     p->free = free_block; // start free here
 
     // make blocks -> [block][data][block][data][block][data]
-    size_t total_size = zone_size * (MIN_BLOCKS);
+    size_t total_size = zone_size * (MALLOC_ZONE);
     while ((void *)free_block + sizeof(t_block) + zone_size <= (void *)p + total_size)
     {
         free_block->next = (void *)free_block + sizeof(t_block) + zone_size;
@@ -91,7 +85,7 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t zo
     if (!p)
     {
         // mmap new page()
-        p = mmap(NULL, zone_size * (MIN_BLOCKS), PROT_READ | PROT_WRITE,
+        p = mmap(NULL, zone_size * (MALLOC_ZONE), PROT_READ | PROT_WRITE,
                    MAP_ANON | MAP_PRIVATE, -1, 0);
         if (p == MAP_FAILED)
             return NULL;

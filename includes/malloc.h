@@ -20,7 +20,10 @@
 
 extern pthread_mutex_t	g_malloc_mutex;
 
-# define MIN_BLOCKS  128
+// # define MIN_BLOCKS  128
+# define MASK_0XFFF		(1 << 12) - 1
+# define MALLOC_ZONE	(1 << 7) // 128
+#define PAGE_MASK 0xFFF // 4096
 
 typedef enum e_block_type {
     BLOCK_TINY,
@@ -28,13 +31,6 @@ typedef enum e_block_type {
     BLOCK_LARGE
 } t_block_type;
 
-// typedef struct s_block {
-//     size_t size;
-//     struct s_block *next;
-//
-//     int free;
-//     t_block_type type;
-// } t_block;
 
 typedef struct s_block {
     size_t size;
@@ -67,11 +63,14 @@ typedef struct s_malloc {
 extern t_malloc g_malloc;
 
 // func def
-// void    free(void *ptr);
+void    free(void *ptr);
 void    *malloc(size_t size);
 void    *realloc(void *ptr, size_t size);
-void    show_alloc_mem();
 
+// utils
+size_t   ft_align(size_t size, size_t mask);
+size_t  page_size(size_t size);
+void    show_alloc_mem();
 
 #endif
 

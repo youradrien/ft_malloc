@@ -1,58 +1,28 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   display.c                                          :+:      :+:    :+:   */
+/*   utils.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: julessainthorant <marvin@42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/01 13:44:18 by julessainthor     #+#    #+#             */
-/*   Updated: 2026/04/01 13:44:18 by julessainthor    ###   ########.fr       */
+/*   Created: 2026/04/01 20:30:18 by julessainthor     #+#    #+#             */
+/*   Updated: 2026/04/01 20:30:19 by julessainthor    ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 #include "malloc.h"
 
+size_t  page_size(size_t size)
+{
+	static const size_t	malloc_size[3] = {BLOCK_TINY, BLOCK_SMALL, BLOCK_LARGE};
 
-// void show_alloc_mem()
-// {
-//     t_block *arr_blocks[3] = {g_malloc.tiny, g_malloc.small, g_malloc.large};
-//     size_t total = 0;
-//     for(int i = 0; i < 3; i ++)
-//     {
-//         if(arr_blocks[i])
-//         {
-//             // zone init
-//             printf("\n%s : %p [zone size = %.2f KB]\n", 
-//                 i == 2 ? ("LARGE") : (i == 0 ? "TINY": "SMALL"), 
-//                 (void *)arr_blocks[i], 
-//                 ((arr_blocks[i])->size * MIN_BLOCKS) / 1024.0
-//             );  
-//             // each alloc
-//             t_block *b = arr_blocks[i];
-//             size_t acc = 0;
-//             while (b)
-//             {
-//                 if (b)
-//                 {
-//                     void 
-//                         *start = (void *)(b + 1),
-//                         *end = (void *)((char *)(b + 1) + b->size);
-//                     acc += b->size;
-//                     printf("%p - %p : %zu bytes\n", start, end, b->size);
-//                 }
-//                 b = b->next;
-//             }
-//             total += acc;
-//             printf("- [%s] TOTAL : %zu bytes \n", 
-//                 i == 2 ? ("LARGE") : (i == 0 ? "TINY": "SMALL"), 
-//                 acc
-//             );
-//         }
-//     }
-//     printf("Total: %zu bytes\n", total);
-//     printf("\n");
-// }
+	return (malloc_size[(size > TINY_MAX) + (size > SMALL_MAX)]);
+}
 
+// align memory on (mask + 1) bytes with (mask + 1) being a power of 2
+inline size_t   ft_align(size_t size, size_t mask)
+{
+	return ((size + mask) & ~mask);
+}
 
 
 static inline void  show_alloc_tiny_small(t_page *page, const char *str)

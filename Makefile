@@ -22,7 +22,7 @@ endif
 PROG_NAME = MALLOC_TESTS
 
 # lib
-SRCS_LIB = src/malloc.c src/free.c src/realloc.c src/display.c
+SRCS_LIB = src/malloc.c src/free.c src/realloc.c src/utils.c
 OBJ_LIB = $(SRCS_LIB:.c=.o)
 
 # tests
