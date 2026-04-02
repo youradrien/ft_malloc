@@ -85,14 +85,16 @@ static void			free_block(t_block *block)
 }
 
 
-void				free(void *ptr)
+void free(void *ptr)
 {
-	pthread_mutex_lock(&g_malloc_mutex);
-	if (ptr && is_valid_block(ptr, SMALL_MAX + 1))
-    {
-        printf("!! free at %p !!\n", ptr);
-		free_block(ptr - sizeof(t_block));
+    pthread_mutex_lock(&g_malloc_mutex);
+
+    if (ptr && is_valid_block(ptr)){
+        printf("VALID free at %p\n", ptr);
+        free_block((t_block *)ptr - 1);
     }
-        printf("!! free at %p !!\n", ptr);
-	pthread_mutex_unlock(&g_malloc_mutex);
+    else {
+        printf("INVALID free at %p\n", ptr);
+    }
+    pthread_mutex_unlock(&g_malloc_mutex);
 }

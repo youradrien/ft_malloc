@@ -72,7 +72,7 @@ void    *realloc(void *ptr, size_t size);
 size_t   ft_align(size_t size, size_t mask);
 size_t  page_size(size_t size);
 void    show_alloc_mem();
-bool	is_valid_block(const void *ptr, size_t size);
+bool	is_valid_block(const void *ptr);
 
 #endif
 

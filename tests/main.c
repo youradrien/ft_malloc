@@ -8,11 +8,11 @@ int main() {
     // --- TINY ---
     char *t1 = (char *)malloc(12);
     void *t2 = malloc(24);
-    void *t3 = malloc(64);
+    void *t3 = malloc(62);
     void *t4 = malloc(1);
 
     // --- SMALL ---
-    void *s1 = malloc(256);
+    char *s1 = (char *)malloc(256);
     void *s2 = malloc(304);
 
     // --- LARGE ---
@@ -29,38 +29,48 @@ int main() {
     t1[2] = 'c';
     t1[3] = '\n';
     printf("t1 = %s", t1);
+    strcpy(s1, "ABCDEGLKFEIJERIJR&ÉÀ1231235030430404040340340\n");
+    printf("s1 = %s", s1);
     show_alloc_mem();
 
-    // free(t1);
-    // printf("t1 = %s", t1);
-    // free(t3);
-    // free(l1);
-    // show_alloc_mem();
+    printf("==================  AFTER FREE ==================\n");
+    free(t1);
+    free(t3);
+    free(l1);
+    
+    show_alloc_mem();
+
+	malloc(1024 * 1024);
+	malloc(1024 * 1024 * 16);
+	malloc(1024 * 1024 * 128);
+    show_alloc_mem();
 
     // stress test
+    /*
     int i; 
-	char *addr; 
+	void *addr; 
 	i = 0; 
-	while (i < 1024) // large
+	while (i < 256) // large
 	{ 
-		addr = (char * )malloc(2500); 
-		// addr[0] = 42; 
+		addr = malloc(2501); 
+		((char *)addr)[0] = 42; 
 		i++; 
 	} 
     i = 0; 
-	while (i < 1024) // small
+	while (i < 256) // small
 	{ 
 		addr = (char * )malloc(1024); 
 		// addr[0] = 42; 
 		i++; 
 	}
     i = 0; 
-	while (i < 1024) // tiny
+	while (i < 256) // tiny
 	{ 
 		addr = (char * )malloc(128); 
 		// addr[0] = 42; 
 		i++; 
 	}  
-    // show_alloc_mem();
+    show_alloc_mem();
+    */
     return 0;
 }

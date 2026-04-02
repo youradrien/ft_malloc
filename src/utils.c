@@ -26,7 +26,7 @@ inline size_t   ft_align(size_t size, size_t mask)
 }
 
 
-static inline void  show_alloc_tiny_small(t_page *page, const char *str)
+static inline size_t  show_alloc_tiny_small(t_page *page, const char *str)
 {
 	t_block				*b;
 	size_t				total;
@@ -44,10 +44,10 @@ static inline void  show_alloc_tiny_small(t_page *page, const char *str)
 		}
 		page = page->next;
 	}
-    printf("Total : %lu bytes\n", total);
+    return total;
 }
 
-static inline void  show_alloc_large(void)
+static inline size_t  show_alloc_large(void)
 {
 	t_block			*b;
 	size_t			total;
@@ -61,19 +61,23 @@ static inline void  show_alloc_large(void)
 		total += b->size;
 		b = b->next;
 	}
-    printf("Total : %lu bytes\n", total);
+    return total;
 }
 
 void    show_alloc_mem()
 {
-	pthread_mutex_lock(&g_malloc_mutex);
+    size_t  total = 0;
+
+    pthread_mutex_lock(&g_malloc_mutex);
 	if (g_malloc.tiny)
-		show_alloc_tiny_small(g_malloc.tiny, "TINY");
+		total += show_alloc_tiny_small(g_malloc.tiny, "TINY");
 	if (g_malloc.small)
-		show_alloc_tiny_small(g_malloc.small, "SMALL");
+		total += show_alloc_tiny_small(g_malloc.small, "SMALL");
 	if (g_malloc.large)
-		show_alloc_large();
+		total += show_alloc_large();
 	pthread_mutex_unlock(&g_malloc_mutex);
+
+    printf("Total : %lu bytes\n", total);
 }
 
 
@@ -81,24 +85,64 @@ void    show_alloc_mem()
 ** Go through list of block and check if we can identify a valid block address
 ** corresponding to the pointer sent. We add the header sizeof(t_block).
 */
-bool	is_valid_block(const void *ptr, size_t size)
-{
-	void		*block_addr;
-	t_block		*b;
+// bool	is_valid_block(const void *ptr, size_t size)
+// {
+// 	void		*block_addr;
+// 	t_block		*b;
 
-	if (size > SMALL_MAX)
-		b = g_malloc.large;
-	else if (size > TINY_MAX)
-		b = (t_block*)g_malloc.small + sizeof(t_page);
-	else
-		b = (t_block*)g_malloc.tiny + sizeof(t_page);
-	block_addr = (b) + sizeof(t_block);
-	while (b && block_addr < ptr)
-	{
-		if (block_addr == ptr)
-			return (true);
-		b = b->next;
-		block_addr = b + sizeof(t_block);
-	}
-	return (false);
+// 	if (size > SMALL_MAX)
+// 		b = g_malloc.large;
+// 	else if (size > TINY_MAX)
+// 		b = (t_block*)g_malloc.small + sizeof(t_page);
+// 	else
+// 		b = (t_block*)g_malloc.tiny + sizeof(t_page);
+// 	block_addr = (b) + sizeof(t_block);
+// 	while (b && block_addr < ptr)
+// 	{
+// 		if (block_addr == ptr)
+// 			return (true);
+// 		b = b->next;
+// 		block_addr = b + sizeof(t_block);
+// 	}
+// 	return (false);
+// }
+bool is_valid_block(const void *ptr)
+{
+    t_block *b;
+
+    // LARGE
+    b = g_malloc.large;
+    while (b)
+    {
+        if ((void *)(b + 1) == ptr)
+            return true;
+        b = b->next;
+    }
+    // SMALL
+    t_page *p = g_malloc.small;
+    while (p)
+    {
+        b = (t_block *)((char *)p + sizeof(t_page));
+        while (b)
+        {
+            if ((void *)(b + 1) == ptr)
+                return true;
+            b = b->next;
+        }
+        p = p->next;
+    }
+    // TINY
+    p = g_malloc.tiny;
+    while (p)
+    {
+        b = (t_block *)((char *)p + sizeof(t_page));
+        while (b)
+        {
+            if ((void *)(b + 1) == ptr)
+                return true;
+            b = b->next;
+        }
+        p = p->next;
+    }
+    return false;
 }
