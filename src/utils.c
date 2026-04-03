@@ -28,14 +28,12 @@ inline size_t   ft_align(size_t size, size_t mask)
 
 static inline size_t  show_alloc_tiny_small(t_page *page, const char *str)
 {
-	t_block				*b;
-	size_t				total;
+	size_t total = 0;
 
-	total = 0;
 	while (page)
 	{
 		printf("%s : %p\n", str, page);
-		b = page->alloc;
+		t_block *b = page->alloc;
 		while (b)
 		{
 			printf("%p - %p : %lu bytes\n", (void *)b+sizeof(t_block),  (void *)b+sizeof(t_block)+b->size,  b->size);
@@ -49,12 +47,10 @@ static inline size_t  show_alloc_tiny_small(t_page *page, const char *str)
 
 static inline size_t  show_alloc_large(void)
 {
-	t_block			*b;
-	size_t			total;
+	size_t			total = 0;
+	t_block			*b = g_malloc.large;
 
-	total = 0;
 	printf("LARGE : %p\n", g_malloc.large);
-	b = g_malloc.large;
 	while (b)
 	{
 		printf("%p - %p : %lu bytes\n", (void *)b+sizeof(t_block),  (void *)b+sizeof(t_block)+b->size,  b->size);
@@ -81,31 +77,7 @@ void    show_alloc_mem()
 }
 
 
-/*
-** Go through list of block and check if we can identify a valid block address
-** corresponding to the pointer sent. We add the header sizeof(t_block).
-*/
-// bool	is_valid_block(const void *ptr, size_t size)
-// {
-// 	void		*block_addr;
-// 	t_block		*b;
-
-// 	if (size > SMALL_MAX)
-// 		b = g_malloc.large;
-// 	else if (size > TINY_MAX)
-// 		b = (t_block*)g_malloc.small + sizeof(t_page);
-// 	else
-// 		b = (t_block*)g_malloc.tiny + sizeof(t_page);
-// 	block_addr = (b) + sizeof(t_block);
-// 	while (b && block_addr < ptr)
-// 	{
-// 		if (block_addr == ptr)
-// 			return (true);
-// 		b = b->next;
-// 		block_addr = b + sizeof(t_block);
-// 	}
-// 	return (false);
-// }
+// go through each page, each page->alloc
 bool is_valid_block(const void *ptr)
 {
     t_block *b;
@@ -118,8 +90,7 @@ bool is_valid_block(const void *ptr)
             return true;
         b = b->next;
     }
-    // SMALL/LARGE
-    // t_page *p = g_malloc.small;
+    // SMALL/TINY
     for(int i = 0; i < 2; i ++)
     {
         t_page *p_arr[2] = {g_malloc.small, g_malloc.tiny};
@@ -136,19 +107,5 @@ bool is_valid_block(const void *ptr)
             p = p->next;
         }
     }
-
-    // TINY
-    // p = g_malloc.tiny;
-    // while (p)
-    // {
-    //     b = (t_block *)((char *)p + sizeof(t_page));
-    //     while (b)
-    //     {
-    //         if ((void *)(b + 1) == ptr)
-    //             return true;
-    //         b = b->next;
-    //     }
-    //     p = p->next;
-    // }
     return false;
 }

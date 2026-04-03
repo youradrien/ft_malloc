@@ -12,7 +12,7 @@
 
 
 #include "malloc.h"
-#include <string.h> // pour memcpy
+#include <string.h> // memcpy
 
 
 // 1. ptr == NULL → se comporte comme malloc(size)
@@ -60,3 +60,36 @@
 //     free(ptr);
 //     return (new_ptr);
 // }
+
+void    *realloc(void *ptr, size_t size)
+{
+    if (!ptr)
+        return malloc(size);
+    if (size == 0)
+    {
+        free(ptr);
+        return NULL;
+    }
+    pthread_mutex_lock(&g_malloc_mutex);
+    if (!is_valid_block(ptr))
+    {
+        pthread_mutex_unlock(&g_malloc_mutex);
+        return NULL;
+    }
+
+    t_block *block = (t_block *)ptr - 1;
+    // taille actuelle suffit: ne rien faire
+    if (block->size >= size)
+    {
+        pthread_mutex_unlock(&g_malloc_mutex);
+        return ptr;
+    }
+    pthread_mutex_unlock(&g_malloc_mutex);
+    // new malloc
+    void *new_ptr = malloc(size);
+    if (!new_ptr)
+        return NULL;
+    memcpy(new_ptr, ptr, block->size);
+    free(ptr);
+    return new_ptr;
+}

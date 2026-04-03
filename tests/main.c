@@ -1,6 +1,10 @@
 // main.c
 #include <stdio.h>
 #include "malloc.h"
+void print(char *s)
+{
+	write(1, s, strlen(s));
+}
 
 int main() {
     printf("==================  MALLOC TESTS ==================\n");
@@ -50,6 +54,14 @@ int main() {
 	malloc(1024 * 1024 * 16);
 	malloc(1024 * 1024 * 128);
     show_alloc_mem();
+
+    printf("================== REALLOC ==================\n");
+    char *bb;
+
+	bb = malloc(16);
+	free((void *)bb + 5);
+	if (realloc((void *)bb + 5, 10) == NULL)
+		print("Bonjours\n");
 
     // stress test
     /*
