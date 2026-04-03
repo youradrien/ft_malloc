@@ -90,7 +90,7 @@ void free(void *ptr)
     pthread_mutex_lock(&g_malloc_mutex);
 
     if (ptr && is_valid_block(ptr)){
-        printf("VALID free at %p\n", ptr);
+        // printf("VALID free at %p\n", ptr);
         free_block((t_block *)ptr - 1);
     }
     else {

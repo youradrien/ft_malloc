@@ -60,6 +60,7 @@ static inline void mem_init_zone(t_page **tiny_small_page, t_page *p, const size
     p->free = free_block; // start free here
 
     // make blocks -> [block][data][block][data][block][data]
+    // data: zone_size
     size_t total_size = zone_size * (MALLOC_ZONE);
     while ((void *)free_block + sizeof(t_block) + zone_size <= (void *)p + total_size)
     {

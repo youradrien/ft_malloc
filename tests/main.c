@@ -1,6 +1,9 @@
 // main.c
 #include <stdio.h>
 #include "malloc.h"
+
+#define M (1024 * 1024) 
+
 void print(char *s)
 {
 	write(1, s, strlen(s));
@@ -62,6 +65,16 @@ int main() {
 	free((void *)bb + 5);
 	if (realloc((void *)bb + 5, 10) == NULL)
 		print("Bonjours\n");
+
+    char *addr1; 
+	char *addr3; 
+
+	addr1 = (char*)malloc(16*M); 
+	strcpy(addr1, "BonjourM\n"); 
+	print(addr1); 
+	addr3 = (char*)realloc(addr1, 128*M); 
+	addr3[127*M] = 42; 
+	print(addr3); 
 
     // stress test
     /*
