@@ -118,31 +118,37 @@ bool is_valid_block(const void *ptr)
             return true;
         b = b->next;
     }
-    // SMALL
-    t_page *p = g_malloc.small;
-    while (p)
+    // SMALL/LARGE
+    // t_page *p = g_malloc.small;
+    for(int i = 0; i < 2; i ++)
     {
-        b = (t_block *)((char *)p + sizeof(t_page));
-        while (b)
+        t_page *p_arr[2] = {g_malloc.small, g_malloc.tiny};
+        t_page *p = p_arr[i];
+        while (p)
         {
-            if ((void *)(b + 1) == ptr)
-                return true;
-            b = b->next;
+            b = p->alloc;
+            while (b)
+            {
+                if ((void *)(b + 1) == ptr)
+                    return true;
+                b = b->next;
+            }
+            p = p->next;
         }
-        p = p->next;
     }
+
     // TINY
-    p = g_malloc.tiny;
-    while (p)
-    {
-        b = (t_block *)((char *)p + sizeof(t_page));
-        while (b)
-        {
-            if ((void *)(b + 1) == ptr)
-                return true;
-            b = b->next;
-        }
-        p = p->next;
-    }
+    // p = g_malloc.tiny;
+    // while (p)
+    // {
+    //     b = (t_block *)((char *)p + sizeof(t_page));
+    //     while (b)
+    //     {
+    //         if ((void *)(b + 1) == ptr)
+    //             return true;
+    //         b = b->next;
+    //     }
+    //     p = p->next;
+    // }
     return false;
 }

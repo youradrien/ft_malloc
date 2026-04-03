@@ -17,6 +17,8 @@ int main() {
 
     // --- LARGE ---
     void *l1 = malloc(5000);
+    void *l2 = malloc(6205);
+    void *l3 = malloc(6205);
 
     (void)t1;
     (void)t2;
@@ -24,6 +26,7 @@ int main() {
     (void)s1;
     (void)s2;
     (void)l1;
+    (void)l2;
     t1[0] = 'a';
     t1[1] = 'b';
     t1[2] = 'c';
@@ -33,10 +36,13 @@ int main() {
     printf("s1 = %s", s1);
     show_alloc_mem();
 
-    printf("==================  AFTER FREE ==================\n");
+    printf("================== FREE ==================\n");
     free(t1);
-    free(t3);
+    free(t2);
     free(l1);
+    free(NULL);
+    free(l2);
+    free(l3);
     
     show_alloc_mem();
 
