@@ -61,8 +61,8 @@ static inline void mem_init_zone(t_page **tiny_small_page, t_page *p, const size
 
     // make blocks -> [block][data][block][data][block][data]
     // data: zone_size
-    size_t total_size = zone_size * (MALLOC_ZONE);
-    while ((void *)free_block + sizeof(t_block) + zone_size <= (void *)p + total_size)
+    void *end = (char *)p + p->total_size;
+    while ((void *)free_block + sizeof(t_block) + zone_size <= (char *)end)
     {
         free_block->next = (void *)free_block + sizeof(t_block) + zone_size;
         free_block->next->prev = free_block;
@@ -86,7 +86,14 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t zo
     if (!p)
     {
         // mmap new page()
-        p = mmap(NULL, zone_size * (MALLOC_ZONE), PROT_READ | PROT_WRITE,
+        size_t page_size = getpagesize();
+        size_t raw_size =
+            sizeof(t_page)
+            + (sizeof(t_block) + zone_size) * MALLOC_ZONE; // <- au moins >= 100blocs
+        size_t zone_total = ft_align(raw_size, page_size - 1); // multiple de 4096
+        p->zone_size = zone_size;
+        p->total_size = zone_total;
+        p = mmap(NULL, zone_total, PROT_READ | PROT_WRITE,
                    MAP_ANON | MAP_PRIVATE, -1, 0);
         if (p == MAP_FAILED)
             return NULL;
@@ -94,6 +101,7 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t zo
         mem_init_zone(tiny_small_page, p, zone_size);
     }
 
+    
     return block_create(&p->free, &p->alloc, ft_align(size, 31));
 }
 
@@ -119,7 +127,12 @@ static void *malloc_large(size_t size)
     return (b + 1);
 }
 
-
+// ex:
+// TINY_MAX = 64
+// MALLOC_ZONE = 128
+// total = 64 * 128 = 8192 bytes
+// 8192 bytes ≈ 2 pages (4096 * 2)
+// ft_align(5000, 4095) → 8192
 void    *malloc(size_t size)
 {
     if (size == 0)

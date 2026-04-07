@@ -25,7 +25,7 @@ static void			free_unused_page(const int t, t_page *p)
 	}
 	if (p->next)
 		p->next->prev = p->prev;
-	munmap(p, MALLOC_ZONE * (t == BLOCK_TINY ? TINY_MAX : SMALL_MAX) );
+	munmap(p, p->total_size /* MALLOC_ZONE * (t == BLOCK_TINY ? TINY_MAX : SMALL_MAX) */);
 }
 
 
@@ -44,6 +44,7 @@ static inline void	free_tiny_small(t_block *block, const int malloc_size, t_page
 	if (p->free)
 		p->free->prev = block;
 	p->free = block;
+    // printf("alloc list: %p\n", p->alloc);
 	if (!p->alloc) // empty alloc page
     {
         // limit the munmap() calls w/ only unmaping empty pages

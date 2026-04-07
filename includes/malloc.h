@@ -16,15 +16,14 @@
 #define MAX_ALLOC (1024UL * 1024UL * 1024UL) // 1 Go / Bloc max éviter overflow
 
 // small fragmentations
-#define TINY_MAX 128 // small structs, strings, pointers
-#define SMALL_MAX 2048 // medium buffers, parsing, I/O buffers
+# define TINY_MAX 100 // small structs, strings, pointers
+# define SMALL_MAX 2048 // medium buffers, parsing, I/O buffers
+# define MALLOC_ZONE	(1 << 7) // 128
 
 extern pthread_mutex_t	g_malloc_mutex;
 
-// # define MIN_BLOCKS  128
 # define MASK_0XFFF		(1 << 12) - 1
-# define MALLOC_ZONE	(1 << 7) // 128
-#define PAGE_MASK 0xFFF // 4096
+# define PAGE_MASK 0xFFF // 4096
 
 typedef enum e_block_type {
     BLOCK_TINY,
@@ -50,6 +49,8 @@ typedef struct s_page {
 
     t_block *free;
     t_block *alloc;
+    size_t total_size;
+    size_t zone_size;
 } t_page;
 
 // allocation structure
