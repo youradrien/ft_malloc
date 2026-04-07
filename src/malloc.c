@@ -91,16 +91,13 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t zo
             sizeof(t_page)
             + (sizeof(t_block) + zone_size) * MALLOC_ZONE; // <- au moins >= 100blocs
         size_t zone_total = ft_align(raw_size, page_size - 1); // multiple de 4096
-        p->zone_size = zone_size;
-        p->total_size = zone_total;
         p = mmap(NULL, zone_total, PROT_READ | PROT_WRITE,
                    MAP_ANON | MAP_PRIVATE, -1, 0);
+        p->total_size = zone_total;
         if (p == MAP_FAILED)
             return NULL;
-        
         mem_init_zone(tiny_small_page, p, zone_size);
     }
-
     
     return block_create(&p->free, &p->alloc, ft_align(size, 31));
 }
@@ -141,6 +138,7 @@ void    *malloc(size_t size)
     size_t type = (size > TINY_MAX) + (size > SMALL_MAX);
     void *ptr = NULL;
 
+    // printf("MALLOC: %zu \n", size);
     pthread_mutex_lock(&g_malloc_mutex);
     if (type == 0)
         ptr = malloc_tiny_small(&g_malloc.tiny, TINY_MAX, size);

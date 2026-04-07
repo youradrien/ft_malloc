@@ -14,6 +14,7 @@ int main() {
 
     // --- TINY ---
     char *t1 = (char *)malloc(12);
+    
     void *t2 = malloc(24);
     void *t3 = malloc(62);
     void *t4 = malloc(1);
