@@ -43,7 +43,7 @@ fi
 # excutable
 OUT=$(basename "$FILE_NAME" .o)
 
-echo "🔧 Compiling $FILE_NAME → $OUT"
+echo "🔧 cmpiling $FILE_NAME → $OUT"
 
 gcc "$FILE_NAME" -o "$OUT" -I./includes/ -L. -lft_malloc
 
@@ -51,7 +51,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+echo "💡 /usr/bin/time → $OUT"
 /usr/bin/time -l ./"$OUT"
+"$OUT" 2>&1 | grep "free_unused_page" | wc -l
 
 rm -f $OUT
 
