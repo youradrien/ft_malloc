@@ -1,6 +1,7 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #define M (1024 * 1024) 
 
 void print(char *s) 

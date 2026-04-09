@@ -87,15 +87,16 @@ static inline void	free_large(t_block *block)
 
 static inline void free_tiny_small(t_block *block, const int malloc_size, t_page *p)
 {
+    printf("block addr: %p\n", block);
     // remove block from alloc-list (-)
     if (block->prev)
         block->prev->next = block->next;
-    //else
+    else
         p->alloc = block->next;
     if (block->next)
         block->next->prev = block->prev;
     // add block to free-list (+)
-    block->prev = NULL;
+    // block->prev = NULL;
     block->next = p->free;
     if (p->free)
         p->free->prev = block;

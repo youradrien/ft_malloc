@@ -16,9 +16,9 @@
 #define MAX_ALLOC (1024UL * 1024UL * 1024UL) // 1 Go / Bloc max éviter overflow
 
 // small fragmentations
-# define TINY_MAX 100 // small structs, strings, pointers
-# define SMALL_MAX 1025 // medium buffers, parsing, I/O buffers
-# define MALLOC_ZONE 128 // (1 << 7) // 128
+# define TINY_MAX 64 // small structs, strings, pointers
+# define SMALL_MAX 1024// medium buffers, parsing, I/O buffers
+# define MALLOC_ZONE 111 // (1 << 7) // 128
 
 extern pthread_mutex_t	g_malloc_mutex;
 
