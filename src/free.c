@@ -90,7 +90,7 @@ static inline void free_tiny_small(t_block *block, const int malloc_size, t_page
     // remove block from alloc-list (-)
     if (block->prev)
         block->prev->next = block->next;
-    else
+    //else
         p->alloc = block->next;
     if (block->next)
         block->next->prev = block->prev;
@@ -102,6 +102,7 @@ static inline void free_tiny_small(t_block *block, const int malloc_size, t_page
     p->free = block;
     // update alloc_count
     p->alloc_count--;
+    (void)(malloc_size);
     
     // optional: only munmap if we really want to shrink memory
     //    on free_tiny_small() we do NOT munmap, PAGES stays in RAM
@@ -136,7 +137,7 @@ void free(void *ptr)
     }
     else
     {
-        // find the page containing the block
+        // find page containing the block
         t_page *p = (type == BLOCK_TINY) ? g_malloc.tiny : g_malloc.small;
         while (p)
         {

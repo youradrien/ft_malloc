@@ -1,6 +1,7 @@
 // main.c
 #include <stdio.h>
-#include "malloc.h"
+#include <stdlib.h>
+// #include "malloc.h"
 
 #define M (1024 * 1024) 
 

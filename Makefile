@@ -19,7 +19,7 @@ else
     LIB_NAME = libft_malloc_$(HOSTTYPE).so
     LINK_NAME = libft_malloc.so
 endif
-PROG_NAME = MALLOC_TESTS
+#PROG_NAME = MALLOC_TESTS
 
 # lib
 SRCS_LIB = src/malloc.c src/free.c src/realloc.c src/utils.c
@@ -31,15 +31,15 @@ OBJ_TEST = $(SRC_TEST:.c=.o)
 
 CFLAGS += -Iincludes
 # def rule
-all: $(LIB_NAME) link $(PROG_NAME)
+all: $(LIB_NAME) link # $(PROG_NAME)
 
 # compile dynamic lib (-shared ou -dynamiclib)
 $(LIB_NAME): $(OBJ_LIB)
 	$(CC) $(LDFLAGS) -o $@ $^
 
 # compile main avec -rpath
-$(PROG_NAME): $(OBJ_TEST) $(LIB_NAME)
-	$(CC) $(OBJ_TEST) -L. -lft_malloc -Wl,-rpath,@executable_path -o $@
+# $(PROG_NAME): $(OBJ_TEST) $(LIB_NAME)
+# 	$(CC) $(OBJ_TEST) -L. -lft_malloc -Wl,-rpath,@executable_path -o $@
 
 # symbolic link host lib -> default lib name
 link: $(LIB_NAME)

@@ -138,7 +138,7 @@ void    *malloc(size_t size)
     size_t type = (size > TINY_MAX) + (size > SMALL_MAX);
     void *ptr = NULL;
 
-    // printf("MALLOC : %zu \n", size);
+    printf("MALLOC : %zu \n", size);
     pthread_mutex_lock(&g_malloc_mutex);
     if (type == 0)
         ptr = malloc_tiny_small(&g_malloc.tiny, TINY_MAX, size);
