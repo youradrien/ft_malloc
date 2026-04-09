@@ -79,7 +79,9 @@ static void			free_block(t_block *block)
 	else 
 	{
 		t_page *p = (type == BLOCK_TINY) ? g_malloc.tiny : g_malloc.small;
-		while (! ((void *)block < (void *)p + MALLOC_ZONE * (type == 0 ? TINY_MAX : SMALL_MAX) && (void *)block > (void *)p) )
+		while (! ((void *)block < (void *)p + MALLOC_ZONE * (type == 0 ? TINY_MAX : SMALL_MAX) 
+                && (void *)block > (void *)p) 
+        )
 			p = p->next;
 		free_tiny_small(block, type, p);
 	}
@@ -88,11 +90,11 @@ static void			free_block(t_block *block)
 
 void free(void *ptr)
 {
-        printf("VALID free at %p\n", ptr);
+
     pthread_mutex_lock(&g_malloc_mutex);
 
     if (ptr && is_valid_block(ptr)){
-        printf("VALID free at %p\n", ptr);
+        // printf("VALID free at %p\n", ptr);
         free_block((t_block *)ptr - 1);
     }
     else {

@@ -17,7 +17,7 @@
 
 // small fragmentations
 # define TINY_MAX 100 // small structs, strings, pointers
-# define SMALL_MAX 2048 // medium buffers, parsing, I/O buffers
+# define SMALL_MAX 1025 // medium buffers, parsing, I/O buffers
 # define MALLOC_ZONE	(1 << 7) // 128
 
 extern pthread_mutex_t	g_malloc_mutex;
@@ -51,6 +51,7 @@ typedef struct s_page {
     t_block *alloc;
     size_t total_size;
     size_t zone_size;
+    size_t alloc_count;
 } t_page;
 
 // allocation structure

@@ -27,6 +27,7 @@ int main() {
     void *l1 = malloc(5000);
     void *l2 = malloc(6205);
     void *l3 = malloc(6205);
+	malloc(1024 * 1024 * 128);
 
     (void)t1;
     (void)t2;
@@ -44,9 +45,11 @@ int main() {
     printf("s1 = %s", s1);
     show_alloc_mem();
 
-    printf("================== FREE ==================\n");
+    printf("==================   FREE   ==================\n");
     free(t1);
     free(t2);
+    free(t3);
+    free(t4);
     free(l1);
     free(NULL);
     free(l2);
@@ -54,12 +57,8 @@ int main() {
     
     show_alloc_mem();
 
-	malloc(1024 * 1024);
-	malloc(1024 * 1024 * 16);
-	malloc(1024 * 1024 * 128);
-    show_alloc_mem();
 
-    printf("================== REALLOC ==================\n");
+    printf("==================   REALLOC  ==================\n");
     char *bb;
 
 	bb = malloc(16);
