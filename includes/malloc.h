@@ -16,9 +16,10 @@
 #define MAX_ALLOC (1024UL * 1024UL * 1024UL) // 1 Go / Bloc max éviter overflow
 
 // small fragmentations
-# define TINY_MAX 64 // small structs, strings, pointers
+# define TINY_MAX 128 // small structs, strings, pointers
 # define SMALL_MAX 1024// medium buffers, parsing, I/O buffers
 # define MALLOC_ZONE 111 // (1 << 7) // 128
+
 
 extern pthread_mutex_t	g_malloc_mutex;
 
@@ -74,7 +75,7 @@ void    *realloc(void *ptr, size_t size);
 // utils
 size_t   ft_align(size_t size, size_t mask);
 size_t  page_size(size_t size);
-void    show_alloc_mem();
+void    show_alloc_mem(void);
 bool	is_valid_block(const void *ptr);
 
 #endif

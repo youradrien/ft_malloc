@@ -41,9 +41,9 @@ exit 1
 fi
 
 # excutable
-OUT=$(basename "$FILE_NAME" .o)
-
-echo "🔧 cmpiling $FILE_NAME → $OUT"
+#OUT=$(basename "$FILE_NAME" .o)
+OUT="${FILE_NAME%.c}.o"
+echo "🔧 ccmpiling $FILE_NAME → $OUT"
 
 gcc "$FILE_NAME" -o "$OUT" -I./includes/ -L. -lft_malloc
 
@@ -53,7 +53,7 @@ fi
 
 echo "💡 /usr/bin/time → $OUT"
 /usr/bin/time -l ./"$OUT"
-"$OUT" 2>&1 | grep "free_unused_page" | wc -l
+#./"$OUT" # 2>&1 | grep "free_unused_page" | wc -l
 
 rm -f $OUT
 

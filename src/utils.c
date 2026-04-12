@@ -48,9 +48,9 @@ static inline size_t  show_alloc_tiny_small(t_page *page, const char *str)
 static inline size_t  show_alloc_large(void)
 {
 	size_t			total = 0;
-	t_block			*b = g_malloc.large;
 
 	printf("LARGE : %p\n", g_malloc.large);
+	t_block			*b = g_malloc.large;
 	while (b)
 	{
 		printf("%p - %p : %lu bytes\n", (void *)b+sizeof(t_block),  (void *)b+sizeof(t_block)+b->size,  b->size);
@@ -60,7 +60,7 @@ static inline size_t  show_alloc_large(void)
     return total;
 }
 
-void    show_alloc_mem()
+void    show_alloc_mem(void)
 {
     size_t  total = 0;
 

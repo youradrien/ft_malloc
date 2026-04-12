@@ -28,46 +28,6 @@
 // 	munmap(p, p->total_size /* MALLOC_ZONE * (t == BLOCK_TINY ? TINY_MAX : SMALL_MAX) */);
 // }
 
-// // [tiny / small]
-// static inline void	free_tiny_small(t_block *block, const int malloc_size, t_page *p)
-// {
-//     //1. remove block from page->alloc list
-// 	if (block->prev)
-// 		block->prev->next = block->next;
-// 	else
-// 		p->alloc = block->next;
-// 	if (block->next)
-// 		block->next->prev = block->prev;
-//     //2. add block to page->free list
-// 	block->prev = NULL;
-// 	block->next = p->free;
-// 	if (p->free)
-// 		p->free->prev = block;
-// 	p->free = block;
-//     // printf("alloc list: %p\n", p->alloc);
-// 	if (!p->alloc) // empty alloc page
-//     {
-//         // limit the munmap() calls w/ only unmaping empty pages
-// 		free_unused_page(malloc_size, p);
-//     }
-// }
-
-// static void			free_block(t_block *block)
-// {
-// 	const int		type = page_size(block->size);
-
-// 	if (type == BLOCK_LARGE)
-// 		free_large(block);
-// 	else 
-// 	{
-// 		t_page *p = (type == BLOCK_TINY) ? g_malloc.tiny : g_malloc.small;
-// 		while (! ((void *)block < (void *)p + MALLOC_ZONE * (type == 0 ? TINY_MAX : SMALL_MAX) 
-//                 && (void *)block > (void *)p) 
-//         )
-// 			p = p->next;
-// 		free_tiny_small(block, type, p);
-// 	}
-// }
 
 // [large]
 static inline void	free_large(t_block *block)
@@ -87,19 +47,20 @@ static inline void	free_large(t_block *block)
 
 static inline void free_tiny_small(t_block *block, const int malloc_size, t_page *p)
 {
-    printf("block addr: %p\n", block);
     // remove block from alloc-list (-)
     if (block->prev)
         block->prev->next = block->next;
-    else
+    else{
         p->alloc = block->next;
+    }
     if (block->next)
         block->next->prev = block->prev;
-    // add block to free-list (+)
-    // block->prev = NULL;
+    // // add block to free-list (+)
+    block->prev = NULL;
     block->next = p->free;
-    if (p->free)
+    if (p->free){
         p->free->prev = block;
+    }
     p->free = block;
     // update alloc_count
     p->alloc_count--;
@@ -114,7 +75,7 @@ static inline void free_tiny_small(t_block *block, const int malloc_size, t_page
 void free(void *ptr)
 {
     pthread_mutex_lock(&g_malloc_mutex);
-
+    // printf("free at %p \n", ptr);
     if (!ptr)
     {
         pthread_mutex_unlock(&g_malloc_mutex);

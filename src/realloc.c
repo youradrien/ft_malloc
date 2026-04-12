@@ -63,7 +63,7 @@
 
 void    *realloc(void *ptr, size_t size)
 {
-    if (!ptr)
+    if (!ptr || !size)
         return malloc(size);
     if (size == 0)
     {
