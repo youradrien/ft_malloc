@@ -47,19 +47,19 @@ static inline void *block_create(t_block **free, t_block **alloc, const size_t s
 //initialize a new page: create free blocks inside page
 static inline void mem_init_zone(t_page **tiny_small_page, t_page *p, const size_t zone_size)
 {
-    // insert page into liste (double linked)
+    // insert page (double linked list)
     // p <-> page1 <-> page2 <-> page3
     p->prev = NULL;
     if ((p->next = *tiny_small_page))
         p->next->prev = p;
     *tiny_small_page = p;
 
-    // init block lists
+    // init block array
     t_block *free_block = (void *)p + sizeof(t_page);
     p->alloc = NULL;
     p->free = free_block; // start free here
 
-    // make blocks -> [block][data][block][data][block][data]
+    // blocks -> [block][data][block][data][block][data]
     // data: zone_size
     void *end = (char *)p + p->total_size;
     while ((char *)free_block + sizeof(t_block) + zone_size <= (char *)end)
