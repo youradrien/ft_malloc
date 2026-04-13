@@ -95,7 +95,6 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t bl
         if (p == MAP_FAILED)
             return NULL;
         p->total_size = zone_total;
-        //printf("new page: %p \n", p);
         mem_init_zone(tiny_small_page, p, block_size);
     }
     
@@ -139,7 +138,6 @@ void    *malloc(size_t size)
     size_t type = (size > TINY_MAX) + (size > SMALL_MAX);
     void *ptr = NULL;
 
-    // printf("MALLOC : %zu \n", size);
     pthread_mutex_lock(&g_malloc_mutex);
     if (type == 0)
         ptr = malloc_tiny_small(&g_malloc.tiny, TINY_MAX, size);

@@ -32,11 +32,11 @@ static inline size_t  show_alloc_tiny_small(t_page *page, const char *str)
 
 	while (page)
 	{
-		printf("%s : %p\n", str, page);
+		ft_printf("%s : %p\n", str, page);
 		t_block *b = page->alloc;
 		while (b)
 		{
-			printf("%p - %p : %lu bytes\n", (void *)b+sizeof(t_block),  (void *)b+sizeof(t_block)+b->size,  b->size);
+			ft_printf("%p - %p : %lu bytes\n", (void *)b+sizeof(t_block),  (void *)b+sizeof(t_block)+b->size,  b->size);
 			total += b->size;
 			b = b->next;
 		}
@@ -49,11 +49,11 @@ static inline size_t  show_alloc_large(void)
 {
 	size_t			total = 0;
 
-	printf("LARGE : %p\n", g_malloc.large);
+	ft_printf("LARGE : %p\n", g_malloc.large);
 	t_block			*b = g_malloc.large;
 	while (b)
 	{
-		printf("%p - %p : %lu bytes\n", (void *)b+sizeof(t_block),  (void *)b+sizeof(t_block)+b->size,  b->size);
+		ft_printf("%p - %p : %lu bytes\n", (void *)b+sizeof(t_block),  (void *)b+sizeof(t_block)+b->size,  b->size);
 		total += b->size;
 		b = b->next;
 	}
@@ -73,7 +73,7 @@ void    show_alloc_mem(void)
 		total += show_alloc_large();
 	pthread_mutex_unlock(&g_malloc_mutex);
 
-    printf("Total : %lu bytes\n", total);
+    ft_printf("Total : %lu bytes\n", total);
 }
 
 

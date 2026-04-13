@@ -76,7 +76,7 @@ static inline void free_tiny_small(t_block *block, const int malloc_size, t_page
 void free(void *ptr)
 {
     pthread_mutex_lock(&g_malloc_mutex);
-    // printf("free at %p \n", ptr);
+    // ft_printf("free at %p \n", ptr);
     if (!ptr)
     {
         pthread_mutex_unlock(&g_malloc_mutex);
@@ -87,7 +87,7 @@ void free(void *ptr)
 
     if (!is_valid_block(ptr))
     {
-        // printf("INVALID free at %p\n", ptr);
+        // ft_printf("INVALID free at %p\n", ptr);
         pthread_mutex_unlock(&g_malloc_mutex);
         return;
     }

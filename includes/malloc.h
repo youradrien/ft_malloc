@@ -68,11 +68,14 @@ void    free(void *ptr);
 void    *malloc(size_t size);
 void    *realloc(void *ptr, size_t size);
 
+void    show_alloc_mem();
+
+
 // utils
 size_t   ft_align(size_t size, size_t mask);
 size_t  page_size(size_t size);
-void    show_alloc_mem();
 bool	is_valid_block(const void *ptr);
+int	    ft_printf(const char *format, ...);
 
 #endif
 
