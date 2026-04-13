@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 OS=$(uname)
 if [ "$OS" = "Darwin" ]; then
     LIB=./libft_malloc.dylib
@@ -25,8 +24,6 @@ if [ ! -f "$LIB" ]; then
 echo "❌ libft_malloc not found: $LIB"
 exit 1
 fi
-
-# === Demande du fichier ===
 
 FILE_PATH="./tests/test_files/"
 
@@ -53,7 +50,5 @@ fi
 
 echo "💡 /usr/bin/time → $OUT"
 /usr/bin/time -l ./"$OUT"
-#./"$OUT" # 2>&1 | grep "free_unused_page" | wc -l
 
 rm -f $OUT
-
