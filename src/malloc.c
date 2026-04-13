@@ -36,7 +36,6 @@ static inline void *block_create(t_block **free, t_block **alloc, const size_t s
     b->next = *alloc;
     b->prev = NULL;
     b->size = size;
-
     *alloc = (b);
     return (b + 1); // memory usable by user
 }
@@ -75,7 +74,7 @@ static inline void mem_init_zone(t_page **tiny_small_page, t_page *p, const size
 
 
 // tiny/small malloc: find a free block or mmap a new page
-static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t zone_size, const size_t size)
+static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t block_size, const size_t size)
 {
     t_page *p = *tiny_small_page;
 
@@ -89,7 +88,7 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t zo
         size_t page_size = getpagesize();
         size_t raw_size =
             sizeof(t_page)
-            + (sizeof(t_block) + zone_size) * MALLOC_ZONE; // <- au moins >= 100blocs
+            + (sizeof(t_block) /*+ block_size*/) * MALLOC_ZONE; // <- au moins >= 100blocs
         size_t zone_total = ft_align(raw_size, page_size - 1); // multiple de 4096
         p = mmap(NULL, zone_total, PROT_READ | PROT_WRITE,
                    MAP_ANON | MAP_PRIVATE, -1, 0);
@@ -97,10 +96,10 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t zo
             return NULL;
         p->total_size = zone_total;
         //printf("new page: %p \n", p);
-        mem_init_zone(tiny_small_page, p, zone_size);
+        mem_init_zone(tiny_small_page, p, block_size);
     }
     
-    p->alloc_count++;
+    //p->alloc_count++;
     return block_create(&p->free, &p->alloc, ft_align(size, 31));
 }
 

@@ -2,10 +2,8 @@
 #ifndef MALLOC_H
 #define MALLOC_H
 
-
 #include <pthread.h>
 #include <stddef.h>
-// #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -18,7 +16,7 @@
 // small fragmentations
 # define TINY_MAX 128 // small structs, strings, pointers
 # define SMALL_MAX 1024// medium buffers, parsing, I/O buffers
-# define MALLOC_ZONE 111 // (1 << 7) // 128
+# define MALLOC_ZONE 128 // (1 << 7) // 128
 
 
 extern pthread_mutex_t	g_malloc_mutex;
@@ -35,11 +33,9 @@ typedef enum e_block_type {
 
 typedef struct s_block {
     size_t size;
-    int is_free;
-
+    
     struct s_block *next;      // alloc list
     struct s_block *prev;      // alloc list
-    // struct s_block *next_free; // free list
 } t_block;
 
 // page
@@ -52,8 +48,8 @@ typedef struct s_page {
     t_block *free;
     t_block *alloc;
     size_t total_size;
-    // size_t zone_size;
-    size_t alloc_count;
+
+    //size_t alloc_count;
 } t_page;
 
 // allocation structure

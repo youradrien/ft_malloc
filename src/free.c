@@ -61,9 +61,10 @@ static inline void free_tiny_small(t_block *block, const int malloc_size, t_page
     if (p->free){
         p->free->prev = block;
     }
-    p->free = block;
+    p->free = block;    
+
     // update alloc_count
-    p->alloc_count--;
+    //p->alloc_count--;
     (void)(malloc_size);
     
     // optional: only munmap if we really want to shrink memory
@@ -86,7 +87,7 @@ void free(void *ptr)
 
     if (!is_valid_block(ptr))
     {
-        printf("INVALID free at %p\n", ptr);
+        // printf("INVALID free at %p\n", ptr);
         pthread_mutex_unlock(&g_malloc_mutex);
         return;
     }
