@@ -90,6 +90,7 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t bl
             sizeof(t_page)
             + (sizeof(t_block) /*+ block_size*/) * MALLOC_ZONE; // <- au moins >= 100blocs
         size_t zone_total = ft_align(raw_size, page_size - 1); // multiple de 4096
+        // size_t zone_total = block_size * (MALLOC_ZONE);
         p = mmap(NULL, zone_total, PROT_READ | PROT_WRITE,
                    MAP_ANON | MAP_PRIVATE, -1, 0);
         if (p == MAP_FAILED)
