@@ -49,7 +49,6 @@ typedef struct s_page {
     t_block *alloc;
     size_t total_size;
 
-    //size_t alloc_count;
 } t_page;
 
 // allocation structure

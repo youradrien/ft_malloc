@@ -18,26 +18,39 @@ pthread_mutex_t g_malloc_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 // create a block -> move from free list to alloc list
-static inline void *block_create(t_block **free, t_block **alloc, const size_t size)
+static inline void *block_create(t_block **free, t_block **alloc, const size_t size, t_page *p)
 {
-    t_block *b = *free; // head from free
-    if (!b)
-        return NULL;
+    t_block *b = *free;
+    // split
+    if (b->size > size + sizeof(t_block))
+    {
+        t_block *new = (void *)b + sizeof(t_block) + size;
 
-    // remove from free list
-    *free = b->next;
-    if (*free)
-        (*free)->prev = NULL;
+        new->size = b->size - size - sizeof(t_block);
+        new->next = b->next;
+        if (new->next)
+            new->next->prev = new;
+        new->prev = NULL;
 
-    // push to alloc list : head insertion O(1) complexity
-    if (*alloc)
-        (*alloc)->prev = (b);
+        // replace block dans p->free_list par new
+        p->free = new;
+    }
+    else
+    {
+        // no split → juste avancer la free list
+        p->free = b->next;
+        if (p->free)
+            p->free->prev = NULL;
+    }
 
-    b->next = *alloc;
-    b->prev = NULL;
     b->size = size;
-    *alloc = (b);
-    return (b + 1); // memory usable by user
+    // maintenant block devient alloc
+    b->next = p->alloc;
+    if (p->alloc)
+        p->alloc->prev = b;
+    b->prev = NULL;
+    p->alloc = (b);
+    return (b + 1);
 }
 
 
@@ -58,18 +71,22 @@ static inline void mem_init_zone(t_page **tiny_small_page, t_page *p, const size
     p->alloc = NULL;
     p->free = free_block; // start free here
 
+    // [USELESS NOW...]
     // blocks -> [block][data][block][data][block][data]
     // data: zone_size
-    void *end = (char *)p + p->total_size;
-    while ((char *)free_block + sizeof(t_block) + zone_size <= (char *)end)
-    {
-        free_block->next = (void *)free_block + sizeof(t_block) + zone_size;
-        free_block->next->prev = free_block;
-        free_block = free_block->next;
-    }
-    free_block->next = NULL;
-}
+    // void *end = (char *)p + p->total_size;
+    // while ((char *)free_block + sizeof(t_block) + zone_size <= (char *)(end))
+    // {
+    //     free_block->next = (void *)free_block + sizeof(t_block) + zone_size;
 
+    //     free_block->next->prev = free_block;
+    //     free_block = free_block->next;
+    // }
+    free_block->size = p->total_size - sizeof(t_page);
+    free_block->next = NULL;
+    free_block->prev = NULL;
+
+}
 
 
 
@@ -88,19 +105,17 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t bl
         size_t page_size = getpagesize();
         size_t raw_size =
             sizeof(t_page)
-            + (sizeof(t_block) /*+ block_size*/) * MALLOC_ZONE; // <- au moins >= 100blocs
+            + (sizeof(t_block) + block_size) * MALLOC_ZONE; // <- au moins >= 100blocs
         size_t zone_total = ft_align(raw_size, page_size - 1); // multiple de 4096
-        // size_t zone_total = block_size * (MALLOC_ZONE);
         p = mmap(NULL, zone_total, PROT_READ | PROT_WRITE,
                    MAP_ANON | MAP_PRIVATE, -1, 0);
+        p->total_size = zone_total;
         if (p == MAP_FAILED)
             return NULL;
-        p->total_size = zone_total;
         mem_init_zone(tiny_small_page, p, block_size);
     }
     
-    //p->alloc_count++;
-    return block_create(&p->free, &p->alloc, ft_align(size, 31));
+    return block_create(&p->free, &p->alloc, ft_align(size, 31), p);
 }
 
 
