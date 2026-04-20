@@ -18,7 +18,7 @@ pthread_mutex_t g_malloc_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 // create a block -> move from free list to alloc list
-static inline void *block_create(t_block **free, t_block **alloc, const size_t size, t_page *p)
+static inline void *block_create(t_block **free, const size_t size, t_page *p)
 {
     t_block *b = *free;
     // split
@@ -57,7 +57,7 @@ static inline void *block_create(t_block **free, t_block **alloc, const size_t s
 
 
 //initialize a new page: create free blocks inside page
-static inline void mem_init_zone(t_page **tiny_small_page, t_page *p, const size_t zone_size)
+static inline void mem_init_zone(t_page **tiny_small_page, t_page *p/*, const size_t zone_size */)
 {
     // insert page (double linked list)
     // p <-> page1 <-> page2 <-> page3
@@ -112,10 +112,10 @@ static inline void  *malloc_tiny_small(t_page **tiny_small_page, const size_t bl
         p->total_size = zone_total;
         if (p == MAP_FAILED)
             return NULL;
-        mem_init_zone(tiny_small_page, p, block_size);
+        mem_init_zone(tiny_small_page, p /*, block_size */);
     }
     
-    return block_create(&p->free, &p->alloc, ft_align(size, 31), p);
+    return block_create(&p->free, ft_align(size, 31), p);
 }
 
 
