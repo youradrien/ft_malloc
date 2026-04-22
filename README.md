@@ -22,7 +22,7 @@ it uses dynamic memory management using low-level system calls such as `mmap` an
 
 ---
 
-## 🧱 architecture
+## architecture
 
 memory is divided into zones:
 
@@ -52,12 +52,13 @@ each zone contains:
 ### 🔹 lazy initialization
 
 instead of pre-creating all blocks:
-* 1 large free block is created initially, blocks are split on demand during each allocation
+* 1 large free block is created initially, blocks are split on demand during each allocation 
 
 significantly reduces:
 * page reclaims
 * memory overhead
 * initialization cost
+* & avoids touching unused memory pages (lazy paging)
 
 ---
 
@@ -74,24 +75,15 @@ allocating:
 
 ### 🔹 free Strategy
 
-* block are returned to the free list of corresponding page
+* block are returned to the free list of corresponding page ->  minimizes page reclaims
 * no immediate `munmap` for TINY/SMALL zones
 * `munmap` is used only for LARGE allocations
 
 ---
 
-## performance notes
+## 🧪 testing
 
-* Avoids touching unused memory pages (lazy paging friendly)
-* Minimizes page reclaims by limiting memory writes
-* Reduces fragmentation with aligned allocations
-* Efficient reuse of freed blocks
-
----
-
-## 🧪 Testing
-
-Example test:
+example test:
 
 ```c
 while (i < 1024)
@@ -103,10 +95,17 @@ while (i < 1024)
 }
 ```
 
-Expected behavior:
+```c
+	char *addr1; 
+	char *addr3; 
 
-* Stable memory usage
-* Minimal page reclaims (~baseline + small overhead)
+	addr1 = (char*)malloc(16*M); 
+	strcpy(addr1, "Bonjours\n"); 
+	print(addr1); 
+	addr3 = (char*)realloc(addr1, 128*M); 
+	addr3[127*M] = 42; 
+	print(addr3); 
+```
 
 ---
 
@@ -116,7 +115,7 @@ Expected behavior:
 make
 ```
 
-this produces:
+this produces (library):
 
 ```
 libft_malloc.dylib (macOS)
@@ -125,7 +124,7 @@ libft_malloc.so    (Linux)
 
 ---
 
-## ▶️ usage
+## ▶️  USAGE
 
 ### macOS
 
@@ -142,10 +141,6 @@ export LD_PRELOAD=./libft_malloc.so
 ./your_program
 ```
 
-### test my malloc performance
-```bash
-/urs/bin/time -l ./your_test
-```
 
 ---
 
@@ -157,19 +152,16 @@ inspect allocations with:
 show_alloc_mem();
 ```
 
----
-
-## ⚠️ limitations
-
-* No advanced coalescing of adjacent free blocks (optional improvement)
-* Basic fragmentation handling
-* Simplified allocator compared to production systems
+test my malloc performance with:
+```bash
+/urs/bin/time -l ./your_test
+```
 
 ---
 
 ## possible improvements
 
-* block-coalescing
+* block-coalescing (no advanced coalescing of adjacent free blocks)
 * Better fit strategies (best-fit / segregated lists)
 
 ---
